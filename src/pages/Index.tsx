@@ -1,5 +1,6 @@
-import { FileText, Shield, Zap, Download } from "lucide-react";
+import { FileText, Shield, Zap, Download, Database } from "lucide-react";
 import { ContractForm } from "@/components/ContractForm";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
@@ -63,11 +64,18 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
-        <div className="container mx-auto px-4 text-center">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Sistema de Contratos de Guiamento Disney. 
             Todos os direitos reservados.
           </p>
+          <Link
+            to="/contratos"
+            className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+          >
+            <Database className="h-4 w-4" />
+            Ver Contratos Salvos
+          </Link>
         </div>
       </footer>
     </div>
