@@ -156,21 +156,39 @@ function renderPage1(
   doc.text("3. DETALHES DA AVENTURA", margin, y);
 
   y += 8;
+  const halfWidth = contentWidth / 2;
+  
   // Row 1: Guia Mágico | Pessoas
-  drawTableRow(doc, margin, y, col1Width, rowHeight, "Guia Mágico:", data.nomeGuia);
-  drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "Pessoas:", data.quantidadePessoas || "-");
+  drawTableRowClean(doc, margin, y, halfWidth, rowHeight, "Guia Mágico:", data.nomeGuia);
+  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, rowHeight, "Pessoas:", data.quantidadePessoas || "-");
   y += rowHeight;
 
-  // Row 2: Datas | Qtd Dias
-  const datasText = data.datas || extractDatesFromParks(data.datasRequeridas);
-  drawTableRow(doc, margin, y, col1Width, rowHeight, "Datas:", datasText);
-  drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "Qtd Dias:", data.quantidadeDias);
+  // Row 2: Qtd Dias | Valor Total
+  drawTableRowClean(doc, margin, y, halfWidth, rowHeight, "Qtd Dias:", data.quantidadeDias);
+  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, rowHeight, "Valor Total:", `R$ ${data.valor}`);
   y += rowHeight;
 
-  // Row 3: Parques | Valor Total (Parques may need more height)
-  const parquesRowHeight = 28;
-  drawTableRowMultiline(doc, margin, y, col1Width, parquesRowHeight, "Parques:", data.datasRequeridas, col1Width - 10);
-  drawTableRow(doc, margin + col1Width, y, col2Width, parquesRowHeight, "Valor Total:", `R$ ${data.valor}`);
+  // Row 3: Parques (full width with proper formatting)
+  const parquesList = formatParquesList(data.datasRequeridas);
+  const parquesLineCount = Math.min(parquesList.length, 8);
+  const parquesRowHeight = Math.max(rowHeight, 10 + parquesLineCount * 5);
+  
+  doc.setDrawColor(...BLACK);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, contentWidth, parquesRowHeight);
+  
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BLACK);
+  doc.text("Parques:", margin + 3, y + 8);
+  
+  doc.setFont("helvetica", "normal");
+  let parqueY = y + 8;
+  parquesList.slice(0, 8).forEach((parque: string) => {
+    doc.text(parque, margin + 35, parqueY);
+    parqueY += 5;
+  });
+  
   y += parquesRowHeight;
 
   // Section 4 - Observações
@@ -190,7 +208,8 @@ function renderPage1(
   doc.setFontSize(9);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(...BLACK);
-  const obsText = `Datas: ${datasText} Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.`;
+  const parquesForObs = formatParquesList(data.datasRequeridas).join('\n');
+  const obsText = `${parquesForObs}\nServiço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.`;
   const obsLines = doc.splitTextToSize(obsText, contentWidth - 10);
   doc.text(obsLines, margin + 5, y + 8);
 }
@@ -363,6 +382,63 @@ function extractDatesFromParks(datasRequeridas: string): string {
     return dates.join(', ');
   }
   return datasRequeridas;
+}
+
+function formatParquesList(datasRequeridas: string): string[] {
+  // Parse "Magic Kingdom (04/01/2026), EPCOT (06/01/2026)" into formatted list
+  const items = datasRequeridas.split(',').map(item => item.trim());
+  const formatted: string[] = [];
+  
+  items.forEach(item => {
+    const match = item.match(/(.+?)\s*\((\d{2})\/(\d{2})\/\d{4}\)/);
+    if (match) {
+      const parkName = match[1].trim();
+      const day = match[2];
+      const month = match[3];
+      formatted.push(`${day}/${month} - ${parkName}`);
+    } else if (item) {
+      formatted.push(item);
+    }
+  });
+  
+  return formatted;
+}
+
+function drawTableRowClean(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+  value: string
+) {
+  // Draw cell border
+  doc.setDrawColor(...BLACK);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, width, height);
+
+  // Label
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BLACK);
+  doc.text(label, x + 3, y + 8);
+
+  // Value - positioned with fixed offset for alignment
+  doc.setFont("helvetica", "normal");
+  const valueX = x + 40; // Fixed position for cleaner alignment
+  
+  // Truncate value if needed
+  const maxValueWidth = width - 45;
+  let displayValue = value;
+  if (doc.getTextWidth(value) > maxValueWidth) {
+    while (doc.getTextWidth(displayValue + "...") > maxValueWidth && displayValue.length > 0) {
+      displayValue = displayValue.slice(0, -1);
+    }
+    displayValue += "...";
+  }
+  
+  doc.text(displayValue, valueX, y + 8);
 }
 
 export function downloadContractPDF(data: ContractData): void {
