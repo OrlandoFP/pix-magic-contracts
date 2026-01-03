@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, User, CalendarDays, List, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, User, CalendarDays, List, Pencil, Trash2, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -12,6 +12,7 @@ import { GuideCalendar } from "@/components/GuideCalendar";
 import { Button } from "@/components/ui/button";
 import { ContractEditDialog } from "@/components/ContractEditDialog";
 import { ContractDeleteDialog } from "@/components/ContractDeleteDialog";
+import { generateContractPDF } from "@/lib/contract-pdf";
 
 interface Contract {
   id: string;
@@ -103,6 +104,22 @@ const Contratos = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleDownload = (contract: Contract) => {
+    const pdf = generateContractPDF({
+      nomeCompleto: contract.nome_completo,
+      cpf: contract.cpf,
+      endereco: contract.endereco,
+      cep: contract.cep,
+      email: contract.email,
+      telefone: contract.telefone,
+      datasRequeridas: contract.datas_requeridas,
+      nomeGuia: contract.nome_guia,
+      quantidadeDias: contract.quantidade_dias.toString(),
+      valor: contract.valor,
+    });
+    pdf.save(`contrato-${contract.nome_completo.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  };
+
   const rafaelContracts = contracts.filter(
     (c) => c.nome_guia.toLowerCase().includes("rafael")
   );
@@ -164,6 +181,14 @@ const Contratos = () => {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDownload(contract)}
+                      title="Baixar PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
