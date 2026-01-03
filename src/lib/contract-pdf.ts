@@ -169,28 +169,41 @@ function renderPage1(
   drawTableRowClean(doc, margin + halfWidth, y, halfWidth, adventureRowHeight, "Valor Total:", `R$ ${data.valor}`);
   y += adventureRowHeight;
 
-  // Row 3: Parques (full width with proper formatting)
+  // Row 3: Parques (full width with dynamic height so text never spills outside the box)
   const parquesList = formatParquesList(data.datasRequeridas);
+  const listX = margin + 50;
+  const listMaxWidth = margin + contentWidth - 5 - listX;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+
+  // Split each park line to the available width and account for wrapping
+  const parquesLines = parquesList.flatMap((parque) =>
+    doc.splitTextToSize(parque, listMaxWidth)
+  );
+
   const parkLineHeight = 6;
-  const parquesRowHeight = 12 + (parquesList.length * parkLineHeight);
-  
+  const topTextOffset = 9;
+  const bottomPadding = 8;
+  const parquesLineCount = Math.max(1, parquesLines.length);
+  const parquesRowHeight = topTextOffset + bottomPadding + (parquesLineCount - 1) * parkLineHeight;
+
   doc.setDrawColor(...BLACK);
   doc.setLineWidth(0.3);
   doc.rect(margin, y, contentWidth, parquesRowHeight);
-  
-  doc.setFontSize(11);
+
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...BLACK);
-  doc.text("Parques:", margin + 5, y + 8);
-  
-  doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  let parqueY = y + 8;
-  parquesList.forEach((parque: string) => {
-    doc.text(parque, margin + 50, parqueY);
+  doc.setTextColor(...BLACK);
+  doc.text("Parques:", margin + 5, y + topTextOffset);
+
+  doc.setFont("helvetica", "normal");
+  let parqueY = y + topTextOffset;
+  parquesLines.forEach((line: string) => {
+    doc.text(line, listX, parqueY);
     parqueY += parkLineHeight;
   });
-  
+
   y += parquesRowHeight + 12;
 
   // Section 4 - Observações
@@ -388,7 +401,10 @@ function extractDatesFromParks(datasRequeridas: string): string {
 
 function formatParquesList(datasRequeridas: string): string[] {
   // Parse "Magic Kingdom (04/01/2026), EPCOT (06/01/2026)" into formatted list
-  const items = datasRequeridas.split(',').map(item => item.trim());
+  const items = datasRequeridas
+    .split(/,\s*|\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
   const formatted: string[] = [];
   
   items.forEach(item => {
