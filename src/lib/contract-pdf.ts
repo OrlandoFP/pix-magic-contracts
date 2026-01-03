@@ -170,48 +170,49 @@ function renderPage1(
 
   // Row 3: Parques (full width with proper formatting)
   const parquesList = formatParquesList(data.datasRequeridas);
-  const parquesLineCount = Math.min(parquesList.length, 8);
-  const parquesRowHeight = Math.max(rowHeight, 10 + parquesLineCount * 5);
+  const lineHeight = 5;
+  const parquesRowHeight = 10 + (parquesList.length * lineHeight);
   
   doc.setDrawColor(...BLACK);
   doc.setLineWidth(0.3);
   doc.rect(margin, y, contentWidth, parquesRowHeight);
   
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...BLACK);
-  doc.text("Parques:", margin + 3, y + 8);
+  doc.text("Parques:", margin + 5, y + 7);
   
   doc.setFont("helvetica", "normal");
-  let parqueY = y + 8;
-  parquesList.slice(0, 8).forEach((parque: string) => {
-    doc.text(parque, margin + 35, parqueY);
-    parqueY += 5;
+  doc.setFontSize(10);
+  let parqueY = y + 7;
+  parquesList.forEach((parque: string) => {
+    doc.text(parque, margin + 45, parqueY);
+    parqueY += lineHeight;
   });
   
-  y += parquesRowHeight;
+  y += parquesRowHeight + 5;
 
   // Section 4 - Observações
-  y += 10;
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...PURPLE);
   doc.text("4. OBSERVAÇÕES E SOLICITAÇÕES", margin, y);
 
   y += 8;
-  // Observations box
-  const obsHeight = 25;
+  
+  // Calculate observations box height dynamically
+  doc.setFontSize(9);
+  const obsText = "Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.";
+  const obsLines = doc.splitTextToSize(obsText, contentWidth - 10);
+  const obsHeight = 10 + (obsLines.length * 5);
+  
   doc.setDrawColor(...BLACK);
   doc.setLineWidth(0.3);
   doc.rect(margin, y, contentWidth, obsHeight);
 
-  doc.setFontSize(9);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(...BLACK);
-  const parquesForObs = formatParquesList(data.datasRequeridas).join('\n');
-  const obsText = `${parquesForObs}\nServiço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.`;
-  const obsLines = doc.splitTextToSize(obsText, contentWidth - 10);
-  doc.text(obsLines, margin + 5, y + 8);
+  doc.text(obsLines, margin + 5, y + 7);
 }
 
 function renderPage2(
