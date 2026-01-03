@@ -10,6 +10,7 @@ export const contractFormSchema = z.object({
   nomeGuia: z.string().trim().min(2, "Nome do guia deve ter pelo menos 2 caracteres").max(100, "Nome do guia deve ter no máximo 100 caracteres"),
   valor: z.string().trim().regex(/^\d+([.,]\d{1,2})?$/, "Valor inválido"),
   datasRequeridas: z.string().trim().optional(),
+  hospedeDisney: z.boolean().default(false),
 });
 
 export type ContractFormData = z.infer<typeof contractFormSchema>;

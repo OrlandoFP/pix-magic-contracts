@@ -22,6 +22,7 @@ export type Database = {
           datas_requeridas: string
           email: string
           endereco: string
+          hospede_disney: boolean
           id: string
           nome_completo: string
           nome_guia: string
@@ -36,6 +37,7 @@ export type Database = {
           datas_requeridas: string
           email: string
           endereco: string
+          hospede_disney?: boolean
           id?: string
           nome_completo: string
           nome_guia: string
@@ -50,6 +52,7 @@ export type Database = {
           datas_requeridas?: string
           email?: string
           endereco?: string
+          hospede_disney?: boolean
           id?: string
           nome_completo?: string
           nome_guia?: string
