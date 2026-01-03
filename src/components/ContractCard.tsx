@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +20,7 @@ interface Contract {
   quantidade_dias: number;
   valor: string;
   created_at: string;
+  hospede_disney?: boolean;
 }
 
 interface ContractCardProps {
@@ -96,7 +97,12 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
         {/* Client info */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{contract.nome_completo}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground truncate">{contract.nome_completo}</h3>
+            {contract.hospede_disney && (
+              <Castle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {contract.nome_guia.toUpperCase()} • {contract.quantidade_dias} PAX • R$ {contract.valor}
           </p>
@@ -105,7 +111,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
         {/* Status badge and expand button */}
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="hidden sm:inline-flex">
-            Ativo
+            {contract.hospede_disney ? "D-7" : "D-3"}
           </Badge>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

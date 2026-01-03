@@ -24,6 +24,7 @@ interface Contract {
   quantidade_dias: number;
   valor: string;
   created_at: string;
+  hospede_disney?: boolean;
 }
 
 const Contratos = () => {

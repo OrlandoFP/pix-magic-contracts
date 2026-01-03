@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2, UserCheck } from "lucide-react";
+import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,12 @@ export function ContractForm() {
     watch,
   } = useForm<ContractFormData>({
     resolver: zodResolver(contractFormSchema),
+    defaultValues: {
+      hospedeDisney: false,
+    },
   });
+
+  const hospedeDisney = watch("hospedeDisney");
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
@@ -159,6 +165,7 @@ export function ContractForm() {
         nome_guia: data.nomeGuia,
         quantidade_dias: parkSelections.length,
         valor: data.valor,
+        hospede_disney: data.hospedeDisney,
       }]);
 
       if (dbError) {
@@ -413,6 +420,32 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               {errors.valor && (
                 <p className="text-sm text-destructive">{errors.valor.message}</p>
               )}
+            </div>
+          </div>
+
+          {/* Disney Guest Switch */}
+          <div className="rounded-lg border p-4 bg-muted/30">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Castle className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <Label htmlFor="hospedeDisney" className="text-base font-medium cursor-pointer">
+                    Hóspede Disney
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {hospedeDisney 
+                      ? "Multipass com D-7 (7 dias antes)" 
+                      : "Multipass com D-3 (3 dias antes)"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="hospedeDisney"
+                checked={hospedeDisney}
+                onCheckedChange={(checked) => setValue("hospedeDisney", checked)}
+              />
             </div>
           </div>
         </div>
