@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2 } from "lucide-react";
+import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2, UserCheck } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -372,11 +373,25 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="nomeGuia">Nome do Guia *</Label>
-              <Input
-                id="nomeGuia"
-                placeholder="Nome do guia responsável"
-                {...register("nomeGuia")}
-              />
+              <Select onValueChange={(value) => setValue("nomeGuia", value)}>
+                <SelectTrigger id="nomeGuia">
+                  <SelectValue placeholder="Selecione o guia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Kleber">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4" />
+                      Kleber
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="Rafael">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4" />
+                      Rafael
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
               {errors.nomeGuia && (
                 <p className="text-sm text-destructive">{errors.nomeGuia.message}</p>
               )}
