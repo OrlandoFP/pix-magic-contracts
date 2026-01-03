@@ -243,18 +243,18 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
       {/* Multipass Reminders */}
       {multipassReminders.filter(r => !(compradoStatus[r.contractId] ?? r.comprado)).length > 0 && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg text-amber-700 dark:text-amber-400">
-              <AlertTriangle className="h-5 w-5" />
+          <CardHeader className="pb-2 px-3 sm:px-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
               Lembretes Multipass
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="px-3 sm:px-6">
+            <div className="space-y-2 sm:space-y-3">
               {multipassReminders.filter(r => !(compradoStatus[r.contractId] ?? r.comprado)).map((reminder, index) => (
                 <div
                   key={`reminder-${index}`}
-                  className={`flex items-center gap-3 p-3 rounded-lg border ${
+                  className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border ${
                     reminder.daysUntilBuy <= 0
                       ? "bg-red-100 border-red-300 dark:bg-red-950/50 dark:border-red-800"
                       : reminder.daysUntilBuy <= 2
@@ -262,69 +262,72 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                       : "bg-background border-border"
                   }`}
                 >
-                  <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-md text-sm font-bold ${
-                    reminder.daysUntilBuy <= 0
-                      ? "bg-red-500 text-white"
-                      : reminder.daysUntilBuy <= 2
-                      ? "bg-amber-500 text-white"
-                      : "bg-blue-500 text-white"
-                  }`}>
-                    <span className="text-xs uppercase">
-                      {format(reminder.buyDate, "MMM", { locale: ptBR })}
-                    </span>
-                    <span className="text-lg leading-none">
-                      {format(reminder.buyDate, "dd")}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <button 
-                        className="font-medium truncate text-left hover:text-primary hover:underline cursor-pointer transition-colors"
-                        onClick={() => setSelectedReminder(reminder)}
-                      >
-                        {reminder.clientName}
-                      </button>
-                      {isComprado(reminder) && (
-                        <Badge className="bg-green-600 text-white text-xs gap-1">
-                          <Check className="h-3 w-3" />
-                          Comprado
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className={`flex flex-col items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-md text-xs sm:text-sm font-bold flex-shrink-0 ${
+                      reminder.daysUntilBuy <= 0
+                        ? "bg-red-500 text-white"
+                        : reminder.daysUntilBuy <= 2
+                        ? "bg-amber-500 text-white"
+                        : "bg-blue-500 text-white"
+                    }`}>
+                      <span className="text-[10px] sm:text-xs uppercase">
+                        {format(reminder.buyDate, "MMM", { locale: ptBR })}
+                      </span>
+                      <span className="text-sm sm:text-lg leading-none">
+                        {format(reminder.buyDate, "dd")}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                        <button 
+                          className="font-medium truncate text-left hover:text-primary hover:underline cursor-pointer transition-colors text-sm sm:text-base"
+                          onClick={() => setSelectedReminder(reminder)}
+                        >
+                          {reminder.clientName}
+                        </button>
+                        {isComprado(reminder) && (
+                          <Badge className="bg-green-600 text-white text-[10px] sm:text-xs gap-1">
+                            <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            Comprado
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
+                        <Badge 
+                          variant="outline" 
+                          className={`text-[10px] sm:text-xs ${
+                            reminder.hospedeDisney 
+                              ? "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400" 
+                              : "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300"
+                          }`}
+                        >
+                          <Castle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                          <span className="hidden sm:inline">{reminder.hospedeDisney ? "D-7 Hóspede" : "D-3 Não Hóspede"}</span>
+                          <span className="sm:hidden">{reminder.hospedeDisney ? "D-7" : "D-3"}</span>
                         </Badge>
-                      )}
+                        {reminder.daysUntilBuy <= 0 ? (
+                          <span className="text-[10px] sm:text-xs font-semibold text-red-600 dark:text-red-400">
+                            ATRASADO!
+                          </span>
+                        ) : reminder.daysUntilBuy === 1 ? (
+                          <span className="text-[10px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400">
+                            AMANHÃ
+                          </span>
+                        ) : (
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">
+                            em {reminder.daysUntilBuy} dias
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                        Viagem: {format(reminder.tripStartDate, "dd/MM/yyyy")}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${
-                          reminder.hospedeDisney 
-                            ? "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400" 
-                            : "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300"
-                        }`}
-                      >
-                        <Castle className="h-3 w-3 mr-1" />
-                        {reminder.hospedeDisney ? "D-7 Hóspede" : "D-3 Não Hóspede"}
-                      </Badge>
-                      {reminder.daysUntilBuy <= 0 ? (
-                        <span className="text-xs font-semibold text-red-600 dark:text-red-400">
-                          ATRASADO!
-                        </span>
-                      ) : reminder.daysUntilBuy === 1 ? (
-                        <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                          AMANHÃ
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          em {reminder.daysUntilBuy} dias
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Viagem: {format(reminder.tripStartDate, "dd/MM/yyyy")}
-                    </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex gap-2 ml-12 sm:ml-0">
                     <Button
                       size="sm"
-                      className={`gap-1 ${
+                      className={`gap-1 flex-1 sm:flex-initial h-8 sm:h-9 text-xs sm:text-sm ${
                         isComprado(reminder) 
                           ? 'bg-green-600 hover:bg-green-700 text-white' 
                           : 'bg-amber-500 hover:bg-amber-600 text-white'
@@ -332,15 +335,15 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                       onClick={() => handleToggleComprado(reminder.contractId, isComprado(reminder))}
                       disabled={updatingId === reminder.contractId}
                     >
-                      {isComprado(reminder) ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+                      {isComprado(reminder) ? <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                       <span className="hidden sm:inline">{isComprado(reminder) ? 'Comprado' : 'Comprar'}</span>
                     </Button>
                     <Button
                       size="sm"
-                      className="gap-1 bg-green-600 hover:bg-green-700 text-white"
+                      className="gap-1 flex-1 sm:flex-initial h-8 sm:h-9 text-xs sm:text-sm bg-green-600 hover:bg-green-700 text-white"
                       onClick={() => handleWhatsApp(reminder.telefone, reminder.clientName)}
                     >
-                      <MessageCircle className="h-4 w-4" />
+                      <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">WhatsApp</span>
                     </Button>
                   </div>
@@ -353,31 +356,31 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
 
       {/* Calendar - Full Width */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CalendarDays className="h-5 w-5 text-primary" />
+        <CardHeader className="pb-2 px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Agenda de {guideName}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border p-3">
+        <CardContent className="px-2 sm:px-6">
+          <div className="rounded-md border p-2 sm:p-3 overflow-x-auto">
             {/* Calendar Header */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-3 sm:mb-4 min-w-[280px]">
               <Button
                 variant="outline"
                 size="icon"
-                className="h-7 w-7"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium">
+              <span className="text-sm sm:text-base font-medium capitalize">
                 {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
               </span>
               <Button
                 variant="outline"
                 size="icon"
-                className="h-7 w-7"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -385,16 +388,17 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
             </div>
 
             {/* Day names */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {["dom", "seg", "ter", "qua", "qui", "sex", "sab"].map((day) => (
-                <div key={day} className="text-center text-xs text-muted-foreground font-medium py-1">
-                  {day}
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2 min-w-[280px]">
+              {["D", "S", "T", "Q", "Q", "S", "S"].map((day, idx) => (
+                <div key={idx} className="text-center text-[10px] sm:text-xs text-muted-foreground font-medium py-1">
+                  <span className="sm:hidden">{day}</span>
+                  <span className="hidden sm:inline">{["dom", "seg", "ter", "qua", "qui", "sex", "sab"][idx]}</span>
                 </div>
               ))}
             </div>
 
             {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
               {(() => {
                 const monthStart = startOfMonth(currentMonth);
                 const monthEnd = endOfMonth(currentMonth);
@@ -405,7 +409,7 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                 
                 // Empty cells for days before month starts
                 for (let i = 0; i < startDayOfWeek; i++) {
-                  cells.push(<div key={`empty-${i}`} className="min-h-[80px]" />);
+                  cells.push(<div key={`empty-${i}`} className="min-h-[50px] sm:min-h-[80px]" />);
                 }
                 
                 // Actual day cells
@@ -414,35 +418,88 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                   const hasEvents = dayEvents.length > 0;
                   
                   cells.push(
-                    <div
-                      key={day.toISOString()}
-                      className={`min-h-[80px] rounded-md border p-1 ${
-                        hasEvents ? "bg-muted/30 border-primary/30" : "border-transparent"
-                      }`}
-                    >
-                      <div className={`text-xs font-medium mb-1 ${hasEvents ? "text-primary" : "text-muted-foreground"}`}>
-                        {format(day, "d")}
-                      </div>
-                      {hasEvents && (
-                        <div className="space-y-1">
-                          {dayEvents.map((event, idx) => (
-                            <button
-                              key={idx}
-                              onClick={() => handleEventClick(event.contractId)}
-                              className={`w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight truncate hover:opacity-80 transition-opacity cursor-pointer ${
-                                event.hospedeDisney 
-                                  ? "bg-amber-400 text-amber-900" 
-                                  : "bg-primary text-primary-foreground"
-                              }`}
-                              title={`${event.clientName} - ${event.park}`}
-                            >
-                              <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
-                              <span className="opacity-80 truncate block">{event.park.length > 12 ? event.park.substring(0, 12) + '...' : event.park}</span>
-                            </button>
-                          ))}
+                    <Popover key={day.toISOString()}>
+                      <PopoverTrigger asChild>
+                        <div
+                          className={`min-h-[50px] sm:min-h-[80px] rounded-md border p-0.5 sm:p-1 cursor-pointer hover:bg-muted/50 transition-colors ${
+                            hasEvents ? "bg-muted/30 border-primary/30" : "border-transparent"
+                          }`}
+                        >
+                          <div className={`text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1 ${hasEvents ? "text-primary" : "text-muted-foreground"}`}>
+                            {format(day, "d")}
+                          </div>
+                          {hasEvents && (
+                            <div className="space-y-0.5 sm:space-y-1">
+                              {/* Mobile: show badges/dots, Desktop: show details */}
+                              <div className="hidden sm:block">
+                                {dayEvents.slice(0, 2).map((event, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEventClick(event.contractId);
+                                    }}
+                                    className={`w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight truncate hover:opacity-80 transition-opacity cursor-pointer mb-0.5 ${
+                                      event.hospedeDisney 
+                                        ? "bg-amber-400 text-amber-900" 
+                                        : "bg-primary text-primary-foreground"
+                                    }`}
+                                    title={`${event.clientName} - ${event.park}`}
+                                  >
+                                    <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
+                                  </button>
+                                ))}
+                                {dayEvents.length > 2 && (
+                                  <span className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</span>
+                                )}
+                              </div>
+                              {/* Mobile: colored dots */}
+                              <div className="flex flex-wrap gap-0.5 sm:hidden">
+                                {dayEvents.slice(0, 3).map((event, idx) => (
+                                  <div
+                                    key={idx}
+                                    className={`w-2 h-2 rounded-full ${
+                                      event.hospedeDisney 
+                                        ? "bg-amber-400" 
+                                        : "bg-primary"
+                                    }`}
+                                  />
+                                ))}
+                                {dayEvents.length > 3 && (
+                                  <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 3}</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      </PopoverTrigger>
+                      {hasEvents && (
+                        <PopoverContent className="w-64 p-2" align="start">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-muted-foreground">
+                              {format(day, "dd 'de' MMMM", { locale: ptBR })}
+                            </p>
+                            {dayEvents.map((event, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => handleEventClick(event.contractId)}
+                                className={`w-full text-left rounded-md p-2 text-xs hover:opacity-90 transition-opacity ${
+                                  event.hospedeDisney 
+                                    ? "bg-amber-100 dark:bg-amber-900/30 border border-amber-300" 
+                                    : "bg-primary/10 border border-primary/30"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{event.clientName}</span>
+                                  {event.hospedeDisney && <Castle className="h-3 w-3 text-amber-600" />}
+                                </div>
+                                <span className="text-muted-foreground">{event.park}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
                       )}
-                    </div>
+                    </Popover>
                   );
                 });
                 
@@ -455,42 +512,42 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
       
       {/* Upcoming Events - Full Width Below */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Users className="h-5 w-5 text-primary" />
+        <CardHeader className="pb-2 px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             Próximos Atendimentos
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6">
           {upcomingEvents.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p>Nenhum atendimento agendado</p>
+            <div className="text-center py-6 sm:py-8 text-muted-foreground">
+              <CalendarDays className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 sm:mb-3 opacity-40" />
+              <p className="text-sm sm:text-base">Nenhum atendimento agendado</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
               {upcomingEvents.map((event, index) => (
                 <button
                   key={`${event.date.toISOString()}-${index}`}
                   onClick={() => handleEventClick(event.contractId)}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border hover:bg-muted/80 transition-colors cursor-pointer text-left"
+                  className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-muted/50 border hover:bg-muted/80 transition-colors cursor-pointer text-left"
                 >
-                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-md bg-primary text-primary-foreground text-sm font-bold">
-                    <span className="text-xs uppercase">
+                  <div className="flex flex-col items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-md bg-primary text-primary-foreground text-xs sm:text-sm font-bold flex-shrink-0">
+                    <span className="text-[10px] sm:text-xs uppercase">
                       {format(event.date, "MMM", { locale: ptBR })}
                     </span>
-                    <span className="text-lg leading-none">
+                    <span className="text-sm sm:text-lg leading-none">
                       {format(event.date, "dd")}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium truncate">{event.clientName}</p>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <p className="font-medium truncate text-sm sm:text-base">{event.clientName}</p>
                       {event.hospedeDisney && (
-                        <Castle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                        <Castle className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
                       )}
                     </div>
-                    <Badge variant="secondary" className="mt-1 text-xs">
+                    <Badge variant="secondary" className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs">
                       {event.park}
                     </Badge>
                   </div>
@@ -502,22 +559,22 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
       </Card>
       
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Total Contratos</p>
-          <p className="text-2xl font-bold text-primary">{contracts.length}</p>
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-muted-foreground">Total Contratos</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{contracts.length}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Dias Agendados</p>
-          <p className="text-2xl font-bold text-primary">{scheduledDates.length}</p>
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-muted-foreground">Dias Agendados</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{scheduledDates.length}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Próximos 30 dias</p>
-          <p className="text-2xl font-bold text-primary">{upcomingEvents.length}</p>
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-muted-foreground">Próximos 30 dias</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{upcomingEvents.length}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Clientes Únicos</p>
-          <p className="text-2xl font-bold text-primary">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-muted-foreground">Clientes Únicos</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">
             {new Set(contracts.map((c) => c.nome_completo)).size}
           </p>
         </Card>
