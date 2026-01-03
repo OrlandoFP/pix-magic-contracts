@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, X } from "lucide-react";
-import { format, isValid, subDays, isAfter, isBefore, addDays } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, isValid, subDays, isAfter, isBefore, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -165,6 +165,7 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   const [compradoStatus, setCompradoStatus] = useState<Record<string, boolean>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedReminder, setSelectedReminder] = useState<MultipassReminder | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const scheduledEvents = useMemo(() => parseScheduledDates(contracts), [contracts]);
   const multipassReminders = useMemo(() => calculateMultipassReminders(contracts), [contracts]);
@@ -350,22 +351,114 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Calendar
-              mode="multiple"
-              selected={scheduledDates}
-              className="rounded-md border pointer-events-none"
-              locale={ptBR}
-              modifiers={{
-                scheduled: scheduledDates,
-              }}
-              modifiersStyles={{
-                scheduled: {
-                  backgroundColor: "hsl(var(--primary))",
-                  color: "hsl(var(--primary-foreground))",
-                  fontWeight: "bold",
-                },
-              }}
-            />
+            <div className="rounded-md border p-3">
+              {/* Calendar Header */}
+              <div className="flex justify-between items-center mb-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium">
+                  {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Day names */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {["dom", "seg", "ter", "qua", "qui", "sex", "sab"].map((day) => (
+                  <div key={day} className="text-center text-xs text-muted-foreground font-medium py-1">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Days */}
+              <div className="grid grid-cols-7 gap-1">
+                {(() => {
+                  const monthStart = startOfMonth(currentMonth);
+                  const monthEnd = endOfMonth(currentMonth);
+                  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                  const startDayOfWeek = getDay(monthStart);
+                  
+                  const cells = [];
+                  
+                  // Empty cells for days before month starts
+                  for (let i = 0; i < startDayOfWeek; i++) {
+                    cells.push(<div key={`empty-${i}`} className="h-9" />);
+                  }
+                  
+                  // Actual day cells
+                  days.forEach((day) => {
+                    const dayEvents = scheduledEvents.filter((e) => isSameDay(e.date, day));
+                    const hasEvents = dayEvents.length > 0;
+                    const isDisney = dayEvents.some(e => e.hospedeDisney);
+                    
+                    if (hasEvents) {
+                      cells.push(
+                        <Popover key={day.toISOString()}>
+                          <PopoverTrigger asChild>
+                            <button
+                              className={`h-9 w-full rounded-md flex items-center justify-center text-sm font-medium transition-colors cursor-pointer ${
+                                isDisney 
+                                  ? "bg-amber-400 text-amber-900 hover:bg-amber-500" 
+                                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+                              }`}
+                            >
+                              {format(day, "d")}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-2" align="center">
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-muted-foreground border-b pb-1">
+                                {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                              </p>
+                              {dayEvents.map((event, idx) => (
+                                <div key={idx} className="flex items-start gap-2 p-2 bg-muted/50 rounded-md">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate">{event.clientName}</p>
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <Badge variant="secondary" className="text-xs">
+                                        {event.park}
+                                      </Badge>
+                                      {event.hospedeDisney && (
+                                        <Castle className="h-3 w-3 text-amber-500" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      );
+                    } else {
+                      cells.push(
+                        <div
+                          key={day.toISOString()}
+                          className="h-9 flex items-center justify-center text-sm text-muted-foreground"
+                        >
+                          {format(day, "d")}
+                        </div>
+                      );
+                    }
+                  });
+                  
+                  return cells;
+                })()}
+              </div>
+            </div>
           </CardContent>
         </Card>
         
