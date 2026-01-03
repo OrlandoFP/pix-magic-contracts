@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle, ShoppingCart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { generateContractPDF } from "@/lib/contract-pdf";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Contract {
   id: string;
@@ -21,6 +23,7 @@ interface Contract {
   valor: string;
   created_at: string;
   hospede_disney?: boolean;
+  comprado?: boolean;
 }
 
 interface ContractCardProps {
@@ -31,6 +34,8 @@ interface ContractCardProps {
 
 export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isComprado, setIsComprado] = useState(contract.comprado || false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const createdDate = new Date(contract.created_at);
   const day = format(createdDate, "d");
@@ -58,6 +63,25 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
     const phone = contract.telefone.replace(/\D/g, '');
     const message = encodeURIComponent(`Olá ${contract.nome_completo.split(' ')[0]}! Aqui é da equipe de guias. Estou entrando em contato sobre o seu passeio.`);
     window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
+  };
+
+  const handleToggleComprado = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsUpdating(true);
+    
+    const newValue = !isComprado;
+    const { error } = await supabase
+      .from('contracts')
+      .update({ comprado: newValue })
+      .eq('id', contract.id);
+    
+    if (error) {
+      toast.error('Erro ao atualizar status');
+    } else {
+      setIsComprado(newValue);
+      toast.success(newValue ? 'Marcado como comprado' : 'Desmarcado');
+    }
+    setIsUpdating(false);
   };
 
   // Parse park entries with dates from datas_requeridas
@@ -115,8 +139,14 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
           </p>
         </div>
 
-        {/* Status badge and expand button */}
+        {/* Status badges and expand button */}
         <div className="flex items-center gap-2">
+          {isComprado && (
+            <Badge className="bg-green-600 text-white hidden sm:inline-flex gap-1">
+              <Check className="h-3 w-3" />
+              Comprado
+            </Badge>
+          )}
           <Badge variant="outline" className="hidden sm:inline-flex">
             {contract.hospede_disney ? "D-7" : "D-3"}
           </Badge>
@@ -194,6 +224,18 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
               {/* Action buttons */}
               <div className="flex flex-row lg:flex-col gap-2 lg:w-44">
+                <Button
+                  className={`flex-1 lg:flex-none gap-2 justify-center ${
+                    isComprado 
+                      ? 'bg-green-600 hover:bg-green-700 text-white' 
+                      : 'bg-amber-500 hover:bg-amber-600 text-white'
+                  }`}
+                  onClick={handleToggleComprado}
+                  disabled={isUpdating}
+                >
+                  {isComprado ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+                  {isComprado ? 'Comprado' : 'Comprar'}
+                </Button>
                 <Button
                   className="flex-1 lg:flex-none gap-2 justify-center bg-green-600 hover:bg-green-700 text-white"
                   onClick={handleWhatsApp}

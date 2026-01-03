@@ -1,0 +1,1 @@
+ALTER TABLE public.contracts ADD COLUMN comprado boolean NOT NULL DEFAULT false;

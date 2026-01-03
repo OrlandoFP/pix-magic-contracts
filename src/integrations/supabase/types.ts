@@ -17,6 +17,7 @@ export type Database = {
       contracts: {
         Row: {
           cep: string
+          comprado: boolean
           cpf: string
           created_at: string
           datas_requeridas: string
@@ -32,6 +33,7 @@ export type Database = {
         }
         Insert: {
           cep: string
+          comprado?: boolean
           cpf: string
           created_at?: string
           datas_requeridas: string
@@ -47,6 +49,7 @@ export type Database = {
         }
         Update: {
           cep?: string
+          comprado?: boolean
           cpf?: string
           created_at?: string
           datas_requeridas?: string
