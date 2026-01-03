@@ -3,13 +3,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, User, CalendarDays, List } from "lucide-react";
+import { ArrowLeft, FileText, User, CalendarDays, List, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { GuideCalendar } from "@/components/GuideCalendar";
 import { Button } from "@/components/ui/button";
+import { ContractEditDialog } from "@/components/ContractEditDialog";
+import { ContractDeleteDialog } from "@/components/ContractDeleteDialog";
 
 interface Contract {
   id: string;
@@ -30,6 +32,14 @@ const Contratos = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contractToDelete, setContractToDelete] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -83,6 +93,16 @@ const Contratos = () => {
     };
   }, []);
 
+  const handleEdit = (contract: Contract) => {
+    setSelectedContract(contract);
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = (contract: Contract) => {
+    setContractToDelete({ id: contract.id, name: contract.nome_completo });
+    setDeleteDialogOpen(true);
+  };
+
   const rafaelContracts = contracts.filter(
     (c) => c.nome_guia.toLowerCase().includes("rafael")
   );
@@ -112,6 +132,7 @@ const Contratos = () => {
               <TableHead>Dias</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Data Criação</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -140,6 +161,27 @@ const Contratos = () => {
                   {format(new Date(contract.created_at), "dd/MM/yyyy HH:mm", {
                     locale: ptBR,
                   })}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(contract)}
+                      title="Editar"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(contract)}
+                      title="Excluir"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -241,6 +283,19 @@ const Contratos = () => {
           </CardContent>
         </Card>
       </main>
+
+      <ContractEditDialog
+        contract={selectedContract}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
+
+      <ContractDeleteDialog
+        contractId={contractToDelete?.id ?? null}
+        contractName={contractToDelete?.name ?? null}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
     </div>
   );
 };
