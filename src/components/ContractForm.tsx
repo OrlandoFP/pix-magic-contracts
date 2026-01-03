@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2 } from "lucide-react";
@@ -16,12 +16,14 @@ import {
   formatCEP,
   formatPhone,
 } from "@/lib/contract-validation";
+import { ParkDateSelector, type ParkSelection, formatParkSelections } from "./ParkDateSelector";
 
 export function ContractForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [rawData, setRawData] = useState("");
+  const [parkSelections, setParkSelections] = useState<ParkSelection[]>([]);
   const { toast } = useToast();
 
   const {
@@ -82,12 +84,11 @@ export function ContractForm() {
         if (parsed.telefone) setValue("telefone", formatPhone(parsed.telefone));
         if (parsed.cep) setValue("cep", formatCEP(parsed.cep));
         if (parsed.endereco) setValue("endereco", parsed.endereco);
-        if (parsed.datasRequeridas) setValue("datasRequeridas", parsed.datasRequeridas);
-        if (parsed.quantidadeDias) setValue("quantidadeDias", String(parsed.quantidadeDias));
+        // Note: Park selections are handled separately via ParkDateSelector
 
         toast({
           title: "Dados preenchidos!",
-          description: "Verifique os campos e complete as informações restantes.",
+          description: "Verifique os campos e selecione os parques com suas datas.",
         });
       }
     } catch (error) {
@@ -103,7 +104,29 @@ export function ContractForm() {
   };
 
   const onSubmit = async (data: ContractFormData) => {
+    // Validate park selections
+    if (parkSelections.length === 0) {
+      toast({
+        title: "Selecione os parques",
+        description: "Selecione pelo menos um parque e sua data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const hasAllDates = parkSelections.every((s) => s.date);
+    if (!hasAllDates) {
+      toast({
+        title: "Datas incompletas",
+        description: "Selecione a data para todos os parques selecionados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
+    
+    const datasRequeridas = formatParkSelections(parkSelections);
     
     try {
       // Save contract to database
@@ -114,9 +137,9 @@ export function ContractForm() {
         cep: data.cep,
         email: data.email,
         telefone: data.telefone,
-        datas_requeridas: data.datasRequeridas,
+        datas_requeridas: datasRequeridas,
         nome_guia: data.nomeGuia,
-        quantidade_dias: Number(data.quantidadeDias),
+        quantidade_dias: parkSelections.length,
         valor: data.valor,
       }]);
 
@@ -133,9 +156,9 @@ export function ContractForm() {
         cep: data.cep,
         email: data.email,
         telefone: data.telefone,
-        datasRequeridas: data.datasRequeridas,
+        datasRequeridas: datasRequeridas,
         nomeGuia: data.nomeGuia,
-        quantidadeDias: data.quantidadeDias,
+        quantidadeDias: String(parkSelections.length),
         valor: data.valor,
       });
       
@@ -323,61 +346,42 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="datasRequeridas">Datas Requeridas *</Label>
-            <Input
-              id="datasRequeridas"
-              placeholder="Ex: 15/01/2025, 16/01/2025, 17/01/2025"
-              {...register("datasRequeridas")}
-            />
-            {errors.datasRequeridas && (
-              <p className="text-sm text-destructive">{errors.datasRequeridas.message}</p>
-            )}
-          </div>
+        <div className="space-y-6">
+          <ParkDateSelector
+            value={parkSelections}
+            onChange={setParkSelections}
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="nomeGuia">Nome do Guia *</Label>
-            <Input
-              id="nomeGuia"
-              placeholder="Nome do guia responsável"
-              {...register("nomeGuia")}
-            />
-            {errors.nomeGuia && (
-              <p className="text-sm text-destructive">{errors.nomeGuia.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="quantidadeDias">Quantidade de Dias *</Label>
-            <Input
-              id="quantidadeDias"
-              type="number"
-              min="1"
-              placeholder="Ex: 3"
-              {...register("quantidadeDias")}
-            />
-            {errors.quantidadeDias && (
-              <p className="text-sm text-destructive">{errors.quantidadeDias.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="valor">Valor Total (R$) *</Label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                R$
-              </span>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="nomeGuia">Nome do Guia *</Label>
               <Input
-                id="valor"
-                placeholder="0,00"
-                className="pl-12"
-                {...register("valor")}
+                id="nomeGuia"
+                placeholder="Nome do guia responsável"
+                {...register("nomeGuia")}
               />
+              {errors.nomeGuia && (
+                <p className="text-sm text-destructive">{errors.nomeGuia.message}</p>
+              )}
             </div>
-            {errors.valor && (
-              <p className="text-sm text-destructive">{errors.valor.message}</p>
-            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="valor">Valor Total (R$) *</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+                  R$
+                </span>
+                <Input
+                  id="valor"
+                  placeholder="0,00"
+                  className="pl-12"
+                  {...register("valor")}
+                />
+              </div>
+              {errors.valor && (
+                <p className="text-sm text-destructive">{errors.valor.message}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
