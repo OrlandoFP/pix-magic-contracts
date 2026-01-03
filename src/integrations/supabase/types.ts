@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contracts: {
+        Row: {
+          cep: string
+          cpf: string
+          created_at: string
+          datas_requeridas: string
+          email: string
+          endereco: string
+          id: string
+          nome_completo: string
+          nome_guia: string
+          quantidade_dias: number
+          telefone: string
+          valor: string
+        }
+        Insert: {
+          cep: string
+          cpf: string
+          created_at?: string
+          datas_requeridas: string
+          email: string
+          endereco: string
+          id?: string
+          nome_completo: string
+          nome_guia: string
+          quantidade_dias: number
+          telefone: string
+          valor: string
+        }
+        Update: {
+          cep?: string
+          cpf?: string
+          created_at?: string
+          datas_requeridas?: string
+          email?: string
+          endereco?: string
+          id?: string
+          nome_completo?: string
+          nome_guia?: string
+          quantidade_dias?: number
+          telefone?: string
+          valor?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
