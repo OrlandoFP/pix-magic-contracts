@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle } from "lucide-react";
+import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { downloadContractPDF } from "@/lib/contract-pdf";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +20,8 @@ import {
 export function ContractForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [rawData, setRawData] = useState("");
   const { toast } = useToast();
 
   const {
@@ -44,6 +47,59 @@ export function ContractForm() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
     setValue("telefone", formatted);
+  };
+
+  const handleParseWithAI = async () => {
+    if (!rawData.trim()) {
+      toast({
+        title: "Cole os dados do cliente",
+        description: "A caixa de texto está vazia.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsParsing(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-contract-data", {
+        body: { rawText: rawData },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      const parsed = data?.data;
+      if (parsed) {
+        if (parsed.nomeCompleto) setValue("nomeCompleto", parsed.nomeCompleto);
+        if (parsed.email) setValue("email", parsed.email);
+        if (parsed.cpf) setValue("cpf", formatCPF(parsed.cpf));
+        if (parsed.telefone) setValue("telefone", formatPhone(parsed.telefone));
+        if (parsed.cep) setValue("cep", formatCEP(parsed.cep));
+        if (parsed.endereco) setValue("endereco", parsed.endereco);
+        if (parsed.datasRequeridas) setValue("datasRequeridas", parsed.datasRequeridas);
+        if (parsed.quantidadeDias) setValue("quantidadeDias", String(parsed.quantidadeDias));
+
+        toast({
+          title: "Dados preenchidos!",
+          description: "Verifique os campos e complete as informações restantes.",
+        });
+      }
+    } catch (error) {
+      console.error("AI parsing error:", error);
+      toast({
+        title: "Erro ao processar",
+        description: error instanceof Error ? error.message : "Não foi possível interpretar os dados.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsParsing(false);
+    }
   };
 
   const onSubmit = async (data: ContractFormData) => {
@@ -102,6 +158,65 @@ export function ContractForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* AI Auto-Fill Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-foreground">Preenchimento Automático</h2>
+            <p className="text-sm text-muted-foreground">Cole os dados brutos do cliente</p>
+          </div>
+        </div>
+
+        <div className="relative">
+          <Textarea
+            placeholder={`Cole aqui os dados do cliente como você recebeu, por exemplo:
+
+Nome completo: João da Silva
+E-mail: joao@email.com
+CPF: 123.456.789-00
+Telefone: (11) 99999-9999
+CEP: 01234-567
+Endereço: Rua das Flores 123
+Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
+            className="min-h-[180px] resize-none pr-4"
+            value={rawData}
+            onChange={(e) => setRawData(e.target.value)}
+          />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleParseWithAI}
+          disabled={isParsing || !rawData.trim()}
+          className="w-full border-violet-500/30 text-violet-600 hover:bg-violet-50 hover:text-violet-700 dark:hover:bg-violet-950"
+        >
+          {isParsing ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processando com IA...
+            </>
+          ) : (
+            <>
+              <Wand2 className="h-4 w-4" />
+              Preencher Formulário Automaticamente
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-3 text-muted-foreground">ou preencha manualmente</span>
+        </div>
+      </div>
+
       {/* Personal Data Section */}
       <div className="space-y-6">
         <div className="flex items-center gap-3">
