@@ -149,62 +149,63 @@ function renderPage1(
   y += rowHeight;
 
   // Section 3 - Detalhes da Aventura
-  y += 10;
-  doc.setFontSize(12);
+  y += 12;
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...PURPLE);
   doc.text("3. DETALHES DA AVENTURA", margin, y);
 
-  y += 8;
+  y += 10;
   const halfWidth = contentWidth / 2;
+  const adventureRowHeight = 14;
   
   // Row 1: Guia Mágico | Pessoas
-  drawTableRowClean(doc, margin, y, halfWidth, rowHeight, "Guia Mágico:", data.nomeGuia);
-  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, rowHeight, "Pessoas:", data.quantidadePessoas || "-");
-  y += rowHeight;
+  drawTableRowClean(doc, margin, y, halfWidth, adventureRowHeight, "Guia Mágico:", data.nomeGuia);
+  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, adventureRowHeight, "Pessoas:", data.quantidadePessoas || "-");
+  y += adventureRowHeight;
 
   // Row 2: Qtd Dias | Valor Total
-  drawTableRowClean(doc, margin, y, halfWidth, rowHeight, "Qtd Dias:", data.quantidadeDias);
-  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, rowHeight, "Valor Total:", `R$ ${data.valor}`);
-  y += rowHeight;
+  drawTableRowClean(doc, margin, y, halfWidth, adventureRowHeight, "Qtd Dias:", data.quantidadeDias);
+  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, adventureRowHeight, "Valor Total:", `R$ ${data.valor}`);
+  y += adventureRowHeight;
 
   // Row 3: Parques (full width with proper formatting)
   const parquesList = formatParquesList(data.datasRequeridas);
-  const lineHeight = 5;
-  const parquesRowHeight = 10 + (parquesList.length * lineHeight);
+  const parkLineHeight = 6;
+  const parquesRowHeight = 12 + (parquesList.length * parkLineHeight);
   
   doc.setDrawColor(...BLACK);
   doc.setLineWidth(0.3);
   doc.rect(margin, y, contentWidth, parquesRowHeight);
   
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...BLACK);
-  doc.text("Parques:", margin + 5, y + 7);
+  doc.text("Parques:", margin + 5, y + 8);
   
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  let parqueY = y + 7;
+  doc.setFontSize(11);
+  let parqueY = y + 8;
   parquesList.forEach((parque: string) => {
-    doc.text(parque, margin + 45, parqueY);
-    parqueY += lineHeight;
+    doc.text(parque, margin + 50, parqueY);
+    parqueY += parkLineHeight;
   });
   
-  y += parquesRowHeight + 5;
+  y += parquesRowHeight + 12;
 
   // Section 4 - Observações
-  doc.setFontSize(12);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...PURPLE);
   doc.text("4. OBSERVAÇÕES E SOLICITAÇÕES", margin, y);
 
-  y += 8;
+  y += 10;
   
   // Calculate observations box height dynamically
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   const obsText = "Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.";
   const obsLines = doc.splitTextToSize(obsText, contentWidth - 10);
-  const obsHeight = 10 + (obsLines.length * 5);
+  const obsHeight = 12 + (obsLines.length * 6);
   
   doc.setDrawColor(...BLACK);
   doc.setLineWidth(0.3);
@@ -212,7 +213,7 @@ function renderPage1(
 
   doc.setFont("helvetica", "italic");
   doc.setTextColor(...BLACK);
-  doc.text(obsLines, margin + 5, y + 7);
+  doc.text(obsLines, margin + 5, y + 8);
 }
 
 function renderPage2(
