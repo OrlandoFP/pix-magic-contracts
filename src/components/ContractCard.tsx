@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,6 +51,13 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
       valor: contract.valor,
     });
     pdf.save(`contrato-${contract.nome_completo.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  };
+
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const phone = contract.telefone.replace(/\D/g, '');
+    const message = encodeURIComponent(`Olá ${contract.nome_completo.split(' ')[0]}! Aqui é da equipe de guias. Estou entrando em contato sobre o seu passeio.`);
+    window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
   };
 
   // Parse park entries with dates from datas_requeridas
@@ -186,7 +193,14 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-row lg:flex-col gap-2 lg:w-40">
+              <div className="flex flex-row lg:flex-col gap-2 lg:w-44">
+                <Button
+                  className="flex-1 lg:flex-none gap-2 justify-center bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleWhatsApp}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </Button>
                 <Button
                   variant="outline"
                   className="flex-1 lg:flex-none gap-2 justify-center"
