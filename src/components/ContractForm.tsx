@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { downloadContractPDF } from "@/lib/contract-pdf";
+import { supabase } from "@/integrations/supabase/client";
 import {
   contractFormSchema,
   type ContractFormData,
@@ -49,9 +50,26 @@ export function ContractForm() {
     setIsGenerating(true);
     
     try {
-      // Simulate processing time
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Save contract to database
+      const { error: dbError } = await supabase.from("contracts").insert([{
+        nome_completo: data.nomeCompleto,
+        cpf: data.cpf,
+        endereco: data.endereco,
+        cep: data.cep,
+        email: data.email,
+        telefone: data.telefone,
+        datas_requeridas: data.datasRequeridas,
+        nome_guia: data.nomeGuia,
+        quantidade_dias: Number(data.quantidadeDias),
+        valor: data.valor,
+      }]);
+
+      if (dbError) {
+        console.error("Error saving contract:", dbError);
+        throw new Error("Erro ao salvar contrato no banco de dados");
+      }
       
+      // Generate and download PDF
       downloadContractPDF({
         nomeCompleto: data.nomeCompleto,
         cpf: data.cpf,
@@ -68,12 +86,13 @@ export function ContractForm() {
       setIsGenerated(true);
       toast({
         title: "Contrato gerado com sucesso!",
-        description: "O download do PDF foi iniciado automaticamente.",
+        description: "O contrato foi salvo e o download iniciado automaticamente.",
       });
     } catch (error) {
+      console.error("Contract generation error:", error);
       toast({
         title: "Erro ao gerar contrato",
-        description: "Por favor, tente novamente.",
+        description: error instanceof Error ? error.message : "Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
