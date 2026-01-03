@@ -12,58 +12,50 @@ interface ContractData {
   quantidadeDias: string;
   valor: string;
   quantidadePessoas?: string;
+  datas?: string;
 }
 
 const CONTRACT_TERMS = `Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.
-
 O valor do Lightning Lane Multi Pass é individual e por parque e será pago diretamente para a Disney (realizamos a compra). Pode variar entre $15 e $30 por dia e por pessoa e só é confirmado no dia da utilização.
-
 O valor do Lightning Lane Single Pass é individual e por parque e será pago diretamente para a Disney (realizamos a compra). Pode variar entre $8 e $29 por dia e por pessoa e só é confirmado no dia da utilização.
-
 Ou seja, o valor do nosso serviço NÃO INCLUI o Lightning Lane Single Pass nem o Lightning Lane Multi Pass, os quais são serviços distintos. Valores do Lightning Lane Multi Pass e do Lightning Lane Single Pass podem variar sem aviso prévio.
-
 No dia a ser utilizado, compraremos o Lightning Lane Multi Pass ou Lightning Lane Single Pass (ou ambos, quem determinará é você) através do seu APP MY DISNEY EXPERIENCE para todo o grupo/família, e fazer todos os agendamentos possíveis durante o seu dia de parque. O horário é válido desde as 7h da manhã (horário que pode ser feito o primeiro agendamento) até as 18h.
-
 Para essa compra ser realizada, precisamos linkar seus dados bancários à sua conta do APP, por isso, no dia anterior à compra, solicitaremos os dados necessários para a realização da mesma. Esse serviço pode ser utilizado nos quatro parques da Disney, sendo apenas um parque por dia. Não fazemos esse tipo de serviço para ingressos Park Hopper.
-
 Através do WhatsApp criaremos um grupo com no máximo duas pessoas do grupo/família, pois caso uma das pessoas perca o sinal, seguimos com a comunicação. Todas as marcações e entradas nas atrações devem e serão comunicadas através do grupo criado no WhatsApp.
-
 O horário de compra do serviço e agendamento das primeiras atrações é sempre (07h00) da manhã, 3 ou 7 dias antes do primeiro dia de parque (03 dias antes para hóspedes externos e 07 dias antes para hóspedes Disney).
-
 OBS 1: O dia de parque já deve estar agendado e todo o grupo deve estar na mesma conta. Não fazemos sincronização de contas quando pessoas do mesmo grupo estão em contas diferentes.
-
 OBS 2: Ao haver cancelamento em até 10 dias antes do serviço, será cobrado uma multa de 50% do valor, após esse período, o valor não será estornado.
-
 OBS 3: Caso o grupo/família ou algum membro deixe de comparecer ao parque por qualquer motivo, o valor não é estornado, pois deixaremos aquele dia e alguém da nossa equipe disponível para realizar o serviço para você.
-
 NÃO GARANTIMOS NENHUM AGENDAMENTO DE ATRAÇÃO ESPECÍFICA, mas faremos de tudo para conseguir as melhores. As atrações são agendadas sempre conforme a disponibilidade do sistema da Disney.
-
 Agendamento e guiamento serão feitos até as 18h, podendo ser estendido.`;
 
-// Colors
-const NAVY = [26, 42, 74] as const;
-const GOLD = [212, 175, 55] as const;
-const DARK_TEXT = [40, 40, 40] as const;
-const LIGHT_TEXT = [100, 100, 100] as const;
+// Colors matching the original PDF
+const PURPLE = [128, 0, 128] as const; // Purple/Magenta for headers
+const GOLD_BORDER = [218, 165, 32] as const; // Gold for page border
+const BLACK = [0, 0, 0] as const;
+const GRAY = [100, 100, 100] as const;
 
 export function generateContractPDF(data: ContractData): jsPDF {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
-  const contentWidth = pageWidth - 2 * margin;
+  const margin = 15;
 
   // ============ PAGE 1 ============
-  renderPage1(doc, data, pageWidth, pageHeight, margin, contentWidth);
+  renderPage1(doc, data, pageWidth, pageHeight, margin);
 
   // ============ PAGE 2 ============
   doc.addPage();
-  renderPage2(doc, data, pageWidth, pageHeight, margin, contentWidth);
-
-  // Footer on all pages
-  addFooter(doc, pageWidth, pageHeight);
+  renderPage2(doc, data, pageWidth, pageHeight, margin);
 
   return doc;
+}
+
+function drawPageBorder(doc: jsPDF, pageWidth: number, pageHeight: number) {
+  // Gold/yellow border around the page
+  doc.setDrawColor(...GOLD_BORDER);
+  doc.setLineWidth(3);
+  doc.rect(5, 5, pageWidth - 10, pageHeight - 10);
 }
 
 function renderPage1(
@@ -71,107 +63,136 @@ function renderPage1(
   data: ContractData,
   pageWidth: number,
   pageHeight: number,
-  margin: number,
-  contentWidth: number
+  margin: number
 ) {
-  let y = 20;
+  drawPageBorder(doc, pageWidth, pageHeight);
 
-  // Header - Company Name
-  doc.setFontSize(28);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...NAVY);
+  const contentWidth = pageWidth - 2 * margin;
+  let y = 25;
+
+  // Header - Company Name in italic purple
+  doc.setFontSize(32);
+  doc.setFont("times", "italic");
+  doc.setTextColor(...PURPLE);
   doc.text("Orlando Fast Pass", pageWidth / 2, y, { align: "center" });
 
+  // Tagline
   y += 10;
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(...GOLD);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...GRAY);
   doc.text("A Magia da Disney nas suas mãos", pageWidth / 2, y, { align: "center" });
 
-  // Gold line separator
-  y += 8;
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(1);
-  doc.line(margin + 40, y, pageWidth - margin - 40, y);
+  // Line separator
+  y += 10;
+  doc.setDrawColor(...BLACK);
+  doc.setLineWidth(0.5);
+  doc.line(margin + 30, y, pageWidth - margin - 30, y);
 
   // Contract Title
   y += 15;
-  doc.setFillColor(...NAVY);
-  doc.roundedRect(margin, y - 6, contentWidth, 14, 2, 2, "F");
-  doc.setFontSize(14);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.text("CONTRATO DE PRESTAÇÃO DE SERVIÇOS", pageWidth / 2, y + 3, { align: "center" });
+  doc.setTextColor(...BLACK);
+  doc.text("CONTRATO DE PRESTAÇÃO DE SERVIÇOS", pageWidth / 2, y, { align: "center" });
 
   // Section 1 - Dados do Viajante
-  y += 25;
-  renderSectionHeader(doc, "1. DADOS DO VIAJANTE (CONTRATANTE)", margin, y);
+  y += 15;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...PURPLE);
+  doc.text("1. DADOS DO VIAJANTE (CONTRATANTE)", margin, y);
 
-  y += 12;
-  const clientData = [
-    { label: "Cliente:", value: data.nomeCompleto },
-    { label: "CPF:", value: data.cpf },
-    { label: "Endereço:", value: data.endereco || "-" },
-    { label: "E-mail:", value: data.email },
-    { label: "Telefone:", value: data.telefone },
-    { label: "CEP:", value: data.cep || "-" },
-  ];
+  // Table for client data
+  y += 8;
+  const tableStartY = y;
+  const rowHeight = 12;
+  const col1Width = 80;
+  const col2Width = contentWidth - col1Width;
 
-  clientData.forEach((item) => {
-    renderLabelValue(doc, item.label, item.value, margin, y, contentWidth);
-    y += 8;
-  });
+  doc.setDrawColor(...BLACK);
+  doc.setLineWidth(0.3);
+
+  // Row 1: Cliente | CPF
+  drawTableRow(doc, margin, y, col1Width, rowHeight, "Cliente:", data.nomeCompleto);
+  drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "CPF:", data.cpf);
+  y += rowHeight;
+
+  // Row 2: Endereço (full width)
+  drawTableRow(doc, margin, y, contentWidth, rowHeight, "Endereço:", data.endereco || "");
+  y += rowHeight;
+
+  // Row 3: E-mail | Telefone
+  drawTableRow(doc, margin, y, col1Width, rowHeight, "E-mail:", data.email || "");
+  drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "Telefone:", data.telefone);
+  y += rowHeight;
+
+  // Row 4: CEP (full width)
+  drawTableRow(doc, margin, y, contentWidth, rowHeight, "CEP:", data.cep || "");
+  y += rowHeight;
 
   // Section 2 - Dados da Contratada
+  y += 10;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...PURPLE);
+  doc.text("2. DADOS DA CONTRATADA (ORLANDO FAST PASS)", margin, y);
+
   y += 8;
-  renderSectionHeader(doc, "2. DADOS DA CONTRATADA (ORLANDO FAST PASS)", margin, y);
+  // Row 1: Razão Social | CNPJ
+  drawTableRow(doc, margin, y, col1Width, rowHeight, "Razão Social:", "Orlando Fast Pass");
+  drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "CNPJ:", "33.142.150/0001-99");
+  y += rowHeight;
 
-  y += 12;
-  const companyData = [
-    { label: "Razão Social:", value: "Orlando Fast Pass" },
-    { label: "CNPJ:", value: "33.142.150/0001-99" },
-    { label: "Endereço:", value: "Rua Nossa Senhora das Mercês, 628 - Vila das Mercês - São Paulo/SP" },
-  ];
-
-  companyData.forEach((item) => {
-    renderLabelValue(doc, item.label, item.value, margin, y, contentWidth);
-    y += 8;
-  });
+  // Row 2: Endereço (full width)
+  drawTableRow(doc, margin, y, contentWidth, rowHeight, "Endereço:", "Rua Nossa Senhora das Mercês, 628 - Vila das Mercês - São Paulo/SP");
+  y += rowHeight;
 
   // Section 3 - Detalhes da Aventura
+  y += 10;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...PURPLE);
+  doc.text("3. DETALHES DA AVENTURA", margin, y);
+
   y += 8;
-  renderSectionHeader(doc, "3. DETALHES DA AVENTURA", margin, y);
+  // Row 1: Guia Mágico | Pessoas
+  drawTableRow(doc, margin, y, col1Width, rowHeight, "Guia Mágico:", data.nomeGuia);
+  drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "Pessoas:", data.quantidadePessoas || "-");
+  y += rowHeight;
 
-  y += 12;
-  const serviceData = [
-    { label: "Guia Mágico:", value: data.nomeGuia },
-    { label: "Pessoas:", value: data.quantidadePessoas || "-" },
-    { label: "Parques:", value: data.datasRequeridas },
-    { label: "Qtd Dias:", value: data.quantidadeDias },
-    { label: "Valor Total:", value: `R$ ${data.valor}` },
-  ];
+  // Row 2: Datas | Qtd Dias
+  const datasText = data.datas || extractDatesFromParks(data.datasRequeridas);
+  drawTableRow(doc, margin, y, col1Width, rowHeight, "Datas:", datasText);
+  drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "Qtd Dias:", data.quantidadeDias);
+  y += rowHeight;
 
-  serviceData.forEach((item) => {
-    renderLabelValue(doc, item.label, item.value, margin, y, contentWidth);
-    y += 8;
-  });
+  // Row 3: Parques | Valor Total (Parques may need more height)
+  const parquesRowHeight = 28;
+  drawTableRowMultiline(doc, margin, y, col1Width, parquesRowHeight, "Parques:", data.datasRequeridas, col1Width - 10);
+  drawTableRow(doc, margin + col1Width, y, col2Width, parquesRowHeight, "Valor Total:", `R$ ${data.valor}`);
+  y += parquesRowHeight;
 
   // Section 4 - Observações
+  y += 10;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...PURPLE);
+  doc.text("4. OBSERVAÇÕES E SOLICITAÇÕES", margin, y);
+
   y += 8;
-  renderSectionHeader(doc, "4. OBSERVAÇÕES E SOLICITAÇÕES", margin, y);
+  // Observations box
+  const obsHeight = 25;
+  doc.setDrawColor(...BLACK);
+  doc.setLineWidth(0.3);
+  doc.rect(margin, y, contentWidth, obsHeight);
 
-  y += 12;
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...DARK_TEXT);
-  doc.text("Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.", margin, y, {
-    maxWidth: contentWidth
-  });
-
-  // Decorative bottom border
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(2);
-  doc.line(0, pageHeight - 10, pageWidth, pageHeight - 10);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(...BLACK);
+  const obsText = `Datas: ${datasText} Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.`;
+  const obsLines = doc.splitTextToSize(obsText, contentWidth - 10);
+  doc.text(obsLines, margin + 5, y + 8);
 }
 
 function renderPage2(
@@ -179,128 +200,169 @@ function renderPage2(
   data: ContractData,
   pageWidth: number,
   pageHeight: number,
-  margin: number,
-  contentWidth: number
+  margin: number
 ) {
-  let y = 20;
+  drawPageBorder(doc, pageWidth, pageHeight);
 
-  // Header
-  doc.setFillColor(...NAVY);
-  doc.roundedRect(margin, y - 6, contentWidth, 14, 2, 2, "F");
-  doc.setFontSize(14);
+  const contentWidth = pageWidth - 2 * margin;
+  let y = 25;
+
+  // Section 5 - Terms and Conditions
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 255, 255);
-  doc.text("DIZERES, TERMOS E CONDIÇÕES", pageWidth / 2, y + 3, { align: "center" });
+  doc.setTextColor(...PURPLE);
+  doc.text("5. DIZERES, TERMOS E CONDIÇÕES", margin, y);
 
-  y += 20;
+  y += 10;
 
   // Terms text
-  doc.setFontSize(8);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...DARK_TEXT);
+  doc.setTextColor(...BLACK);
 
   const lines = doc.splitTextToSize(CONTRACT_TERMS, contentWidth);
   lines.forEach((line: string) => {
-    if (y > pageHeight - 80) {
+    if (y > pageHeight - 100) {
       doc.addPage();
-      y = 20;
+      drawPageBorder(doc, pageWidth, pageHeight);
+      y = 25;
     }
     doc.text(line, margin, y);
-    y += 4;
+    y += 5;
   });
 
-  // Signature Section
+  // Signature Section at bottom
   y = pageHeight - 70;
-  
-  doc.setDrawColor(...NAVY);
+
+  // Right side - Guide signature (name in italic)
+  const rightX = pageWidth - margin - 70;
+  doc.setFontSize(20);
+  doc.setFont("times", "italic");
+  doc.setTextColor(...BLACK);
+  doc.text(data.nomeGuia, rightX + 35, y, { align: "center" });
+
+  // Signature lines
+  y += 15;
+  doc.setDrawColor(...BLACK);
   doc.setLineWidth(0.5);
 
-  // Left signature - Guide
-  const leftCenter = margin + 45;
-  doc.line(margin, y, margin + 90, y);
+  // Left signature line
+  const leftLineStart = margin;
+  const leftLineEnd = margin + 70;
+  doc.line(leftLineStart, y, leftLineEnd, y);
+
+  // Right signature line
+  const rightLineStart = pageWidth - margin - 70;
+  const rightLineEnd = pageWidth - margin;
+  doc.line(rightLineStart, y, rightLineEnd, y);
+
+  // Left side labels
+  y += 8;
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...NAVY);
-  doc.text(data.nomeGuia, leftCenter, y + 8, { align: "center" });
-  
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...LIGHT_TEXT);
-  doc.text("Assinatura do Contratante", leftCenter, y + 14, { align: "center" });
+  doc.setTextColor(...BLACK);
+  doc.text("Assinatura do Contratante", leftLineStart, y);
 
-  // Right signature - Company
-  const rightCenter = pageWidth - margin - 45;
-  doc.line(pageWidth - margin - 90, y, pageWidth - margin, y);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...NAVY);
-  doc.text("Orlando Fast Pass", rightCenter, y + 8, { align: "center" });
-  
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...LIGHT_TEXT);
-  doc.text("CONSULTORIA E ESTRATÉGIA MÁGICA", rightCenter, y + 14, { align: "center" });
+  doc.text("Orlando Fast Pass", rightLineStart, y);
 
-  // Client name below left signature
+  // Client name
+  y += 8;
   doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...DARK_TEXT);
-  doc.text(data.nomeCompleto.toUpperCase(), leftCenter, y + 22, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.text(data.nomeCompleto.toUpperCase(), leftLineStart, y);
 
-  // Decorative bottom border
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(2);
-  doc.line(0, pageHeight - 10, pageWidth, pageHeight - 10);
+  // Company subtitle
+  doc.setFontSize(8);
+  doc.setTextColor(...PURPLE);
+  doc.text("CONSULTORIA E ESTRATÉGIA MÁGICA", rightLineStart, y);
 }
 
-function renderSectionHeader(doc: jsPDF, text: string, x: number, y: number) {
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...NAVY);
-  doc.text(text, x, y);
-
-  // Gold underline
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.5);
-  doc.line(x, y + 2, x + doc.getTextWidth(text), y + 2);
-}
-
-function renderLabelValue(
+function drawTableRow(
   doc: jsPDF,
-  label: string,
-  value: string,
   x: number,
   y: number,
-  maxWidth: number
+  width: number,
+  height: number,
+  label: string,
+  value: string
 ) {
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...LIGHT_TEXT);
-  doc.text(label, x, y);
+  // Draw cell border
+  doc.setDrawColor(...BLACK);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, width, height);
 
-  const labelWidth = doc.getTextWidth(label) + 3;
+  // Label
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BLACK);
+  doc.text(label, x + 3, y + 8);
+
+  // Value
+  const labelWidth = doc.getTextWidth(label) + 5;
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...DARK_TEXT);
   
-  // Handle long values
-  const availableWidth = maxWidth - labelWidth;
-  const lines = doc.splitTextToSize(value, availableWidth);
-  doc.text(lines[0] || "-", x + labelWidth, y);
+  // Truncate value if too long
+  const maxValueWidth = width - labelWidth - 5;
+  let displayValue = value;
+  if (doc.getTextWidth(value) > maxValueWidth) {
+    while (doc.getTextWidth(displayValue + "...") > maxValueWidth && displayValue.length > 0) {
+      displayValue = displayValue.slice(0, -1);
+    }
+    displayValue += "...";
+  }
+  
+  doc.text(displayValue, x + 3 + labelWidth, y + 8);
 }
 
-function addFooter(doc: jsPDF, pageWidth: number, pageHeight: number) {
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(...LIGHT_TEXT);
-    doc.text(
-      `Página ${i} de ${pageCount}`,
-      pageWidth / 2,
-      pageHeight - 15,
-      { align: "center" }
-    );
+function drawTableRowMultiline(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+  value: string,
+  maxTextWidth: number
+) {
+  // Draw cell border
+  doc.setDrawColor(...BLACK);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, width, height);
+
+  // Label
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BLACK);
+  doc.text(label, x + 3, y + 8);
+
+  // Value - multiline
+  const labelWidth = doc.getTextWidth(label) + 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  
+  const lines = doc.splitTextToSize(value, maxTextWidth - labelWidth);
+  let textY = y + 8;
+  lines.slice(0, 4).forEach((line: string) => {
+    doc.text(line, x + 3 + labelWidth, textY);
+    textY += 5;
+  });
+}
+
+function extractDatesFromParks(datasRequeridas: string): string {
+  // Extract dates from format like "Magic Kingdom (04/01/2026), EPCOT (06/01/2026)"
+  const dateRegex = /\((\d{2}\/\d{2}\/\d{4})\)/g;
+  const dates: string[] = [];
+  let match;
+  while ((match = dateRegex.exec(datasRequeridas)) !== null) {
+    const dateStr = match[1].split('/').slice(0, 2).join('/'); // Get only DD/MM
+    if (!dates.includes(dateStr)) {
+      dates.push(dateStr);
+    }
   }
+  if (dates.length > 0) {
+    return dates.join(', ');
+  }
+  return datasRequeridas;
 }
 
 export function downloadContractPDF(data: ContractData): void {
