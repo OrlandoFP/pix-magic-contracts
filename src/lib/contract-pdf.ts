@@ -68,7 +68,21 @@ function renderPage1(
   drawPageBorder(doc, pageWidth, pageHeight);
 
   const contentWidth = pageWidth - 2 * margin;
-  let y = 25;
+  const pageTopY = 25;
+  const contentBottomY = pageHeight - margin - 12;
+  let y = pageTopY;
+
+  const newContentPage = () => {
+    doc.addPage();
+    drawPageBorder(doc, pageWidth, pageHeight);
+    y = pageTopY;
+  };
+
+  const ensureSpace = (requiredHeight: number) => {
+    if (y + requiredHeight > contentBottomY) {
+      newContentPage();
+    }
+  };
 
   // Header - Company Name in italic purple
   doc.setFontSize(32);
@@ -169,7 +183,7 @@ function renderPage1(
   drawTableRowClean(doc, margin + halfWidth, y, halfWidth, adventureRowHeight, "Valor Total:", `R$ ${data.valor}`);
   y += adventureRowHeight;
 
-  // Row 3: Parques (full width with dynamic height so text never spills outside the box)
+  // Row 3: Parques (quebra automática de página quando necessário)
   const parquesList = formatParquesList(data.datasRequeridas);
   const listX = margin + 50;
   const listMaxWidth = margin + contentWidth - 5 - listX;
@@ -178,55 +192,142 @@ function renderPage1(
   doc.setFontSize(11);
 
   // Split each park line to the available width and account for wrapping
-  const parquesLines = parquesList.flatMap((parque) =>
+  const rawParquesLines = parquesList.flatMap((parque) =>
     doc.splitTextToSize(parque, listMaxWidth)
   );
+  const parquesLines = rawParquesLines.length > 0 ? rawParquesLines : ["-"];
 
   const parkLineHeight = 6;
   const topTextOffset = 9;
   const bottomPadding = 8;
-  const parquesLineCount = Math.max(1, parquesLines.length);
-  const parquesRowHeight = topTextOffset + bottomPadding + (parquesLineCount - 1) * parkLineHeight;
+  const minParquesBoxHeight = topTextOffset + bottomPadding;
 
-  doc.setDrawColor(...BLACK);
-  doc.setLineWidth(0.3);
-  doc.rect(margin, y, contentWidth, parquesRowHeight);
+  ensureSpace(minParquesBoxHeight + 12);
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(...BLACK);
-  doc.text("Parques:", margin + 5, y + topTextOffset);
+  let remainingParques = [...parquesLines];
+  while (remainingParques.length > 0) {
+    const availableHeight = contentBottomY - y;
 
-  doc.setFont("helvetica", "normal");
-  let parqueY = y + topTextOffset;
-  parquesLines.forEach((line: string) => {
-    doc.text(line, listX, parqueY);
-    parqueY += parkLineHeight;
-  });
+    if (availableHeight < minParquesBoxHeight) {
+      newContentPage();
+      continue;
+    }
 
-  y += parquesRowHeight + 12;
+    const maxLinesThisBox = Math.max(
+      1,
+      Math.floor((availableHeight - topTextOffset - bottomPadding) / parkLineHeight) + 1
+    );
 
-  // Section 4 - Observações
-  doc.setFontSize(13);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...PURPLE);
-  doc.text("4. OBSERVAÇÕES E SOLICITAÇÕES", margin, y);
+    const boxLines = remainingParques.slice(0, maxLinesThisBox);
+    remainingParques = remainingParques.slice(boxLines.length);
 
-  y += 10;
-  
-  // Calculate observations box height dynamically
-  doc.setFontSize(10);
-  const obsText = "Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.";
-  const obsLines = doc.splitTextToSize(obsText, contentWidth - 10);
-  const obsHeight = 12 + (obsLines.length * 6);
-  
-  doc.setDrawColor(...BLACK);
-  doc.setLineWidth(0.3);
-  doc.rect(margin, y, contentWidth, obsHeight);
+    const boxHeight =
+      topTextOffset + bottomPadding + (boxLines.length - 1) * parkLineHeight;
+
+    doc.setDrawColor(...BLACK);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, y, contentWidth, boxHeight);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...BLACK);
+    doc.text("Parques:", margin + 5, y + topTextOffset);
+
+    doc.setFont("helvetica", "normal");
+    let parqueY = y + topTextOffset;
+    boxLines.forEach((line: string) => {
+      doc.text(line, listX, parqueY);
+      parqueY += parkLineHeight;
+    });
+
+    y += boxHeight + 12;
+
+    if (remainingParques.length > 0) {
+      newContentPage();
+    }
+  }
+
+  // Section 4 - Observações (quebra automática de página quando necessário)
+  const obsText =
+    "Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.";
 
   doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
   doc.setTextColor(...BLACK);
-  doc.text(obsLines, margin + 5, y + 8);
+
+  const obsLines = doc.splitTextToSize(obsText, contentWidth - 10) as string[];
+  const obsLineHeight = 6;
+  const obsTopOffset = 8;
+  const obsBottomPadding = 8;
+  const minObsBoxHeight = obsTopOffset + obsBottomPadding;
+
+  const drawObsTitle = (continued: boolean) => {
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...PURPLE);
+    doc.text(
+      continued
+        ? "4. OBSERVAÇÕES E SOLICITAÇÕES (CONT.)"
+        : "4. OBSERVAÇÕES E SOLICITAÇÕES",
+      margin,
+      y
+    );
+    y += 10;
+  };
+
+  // Evita título “sobrando” no fim da página sem a caixa logo abaixo
+  ensureSpace(10 + minObsBoxHeight);
+  drawObsTitle(false);
+
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(...BLACK);
+
+  let remainingObs = obsLines.length > 0 ? [...obsLines] : [""];
+  while (remainingObs.length > 0) {
+    const availableHeight = contentBottomY - y;
+
+    if (availableHeight < minObsBoxHeight) {
+      newContentPage();
+      drawObsTitle(true);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(...BLACK);
+      continue;
+    }
+
+    const maxLinesThisBox = Math.max(
+      1,
+      Math.floor((availableHeight - obsTopOffset - obsBottomPadding) / obsLineHeight) + 1
+    );
+
+    const boxLines = remainingObs.slice(0, maxLinesThisBox);
+    remainingObs = remainingObs.slice(boxLines.length);
+
+    const boxHeight =
+      obsTopOffset + obsBottomPadding + (boxLines.length - 1) * obsLineHeight;
+
+    doc.setDrawColor(...BLACK);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, y, contentWidth, boxHeight);
+
+    let textY = y + obsTopOffset;
+    boxLines.forEach((line: string) => {
+      doc.text(line, margin + 5, textY);
+      textY += obsLineHeight;
+    });
+
+    y += boxHeight + 12;
+
+    if (remainingObs.length > 0) {
+      newContentPage();
+      drawObsTitle(true);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(...BLACK);
+    }
+  }
+
 }
 
 function renderPage2(
