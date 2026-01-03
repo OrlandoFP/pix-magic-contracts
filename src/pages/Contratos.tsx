@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, User, CalendarDays, List, Pencil, Trash2, Download } from "lucide-react";
+import { ArrowLeft, FileText, User, CalendarDays, List } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { GuideCalendar } from "@/components/GuideCalendar";
 import { Button } from "@/components/ui/button";
 import { ContractEditDialog } from "@/components/ContractEditDialog";
 import { ContractDeleteDialog } from "@/components/ContractDeleteDialog";
-import { generateContractPDF } from "@/lib/contract-pdf";
+import { ContractCard } from "@/components/ContractCard";
 
 interface Contract {
   id: string;
@@ -104,21 +101,6 @@ const Contratos = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDownload = (contract: Contract) => {
-    const pdf = generateContractPDF({
-      nomeCompleto: contract.nome_completo,
-      cpf: contract.cpf,
-      endereco: contract.endereco,
-      cep: contract.cep,
-      email: contract.email,
-      telefone: contract.telefone,
-      datasRequeridas: contract.datas_requeridas,
-      nomeGuia: contract.nome_guia,
-      quantidadeDias: contract.quantidade_dias.toString(),
-      valor: contract.valor,
-    });
-    pdf.save(`contrato-${contract.nome_completo.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-  };
 
   const rafaelContracts = contracts.filter(
     (c) => c.nome_guia.toLowerCase().includes("rafael")
@@ -127,7 +109,7 @@ const Contratos = () => {
     (c) => c.nome_guia.toLowerCase().includes("kleber")
   );
 
-  const ContractTable = ({ data }: { data: Contract[] }) => {
+  const ContractList = ({ data }: { data: Contract[] }) => {
     if (data.length === 0) {
       return (
         <div className="text-center py-12 text-muted-foreground">
@@ -138,80 +120,15 @@ const Contratos = () => {
     }
 
     return (
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Datas</TableHead>
-              <TableHead>Dias</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Data Criação</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((contract) => (
-              <TableRow key={contract.id}>
-                <TableCell className="font-medium">
-                  <div>
-                    <p>{contract.nome_completo}</p>
-                    <p className="text-xs text-muted-foreground">{contract.cpf}</p>
-                  </div>
-                </TableCell>
-                <TableCell>{contract.email}</TableCell>
-                <TableCell>{contract.telefone}</TableCell>
-                <TableCell className="max-w-[200px]">
-                  <p className="truncate" title={contract.datas_requeridas}>
-                    {contract.datas_requeridas}
-                  </p>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{contract.quantidade_dias}</Badge>
-                </TableCell>
-                <TableCell className="font-semibold text-primary">
-                  R$ {contract.valor}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {format(new Date(contract.created_at), "dd/MM/yyyy HH:mm", {
-                    locale: ptBR,
-                  })}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDownload(contract)}
-                      title="Baixar PDF"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(contract)}
-                      title="Editar"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(contract)}
-                      title="Excluir"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="space-y-3">
+        {data.map((contract) => (
+          <ContractCard
+            key={contract.id}
+            contract={contract}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ))}
       </div>
     );
   };
@@ -292,7 +209,7 @@ const Contratos = () => {
                   {viewMode === "calendar" ? (
                     <GuideCalendar contracts={rafaelContracts} guideName="Rafael" />
                   ) : (
-                    <ContractTable data={rafaelContracts} />
+                    <ContractList data={rafaelContracts} />
                   )}
                 </TabsContent>
                 
@@ -300,7 +217,7 @@ const Contratos = () => {
                   {viewMode === "calendar" ? (
                     <GuideCalendar contracts={kleberContracts} guideName="Kleber" />
                   ) : (
-                    <ContractTable data={kleberContracts} />
+                    <ContractList data={kleberContracts} />
                   )}
                 </TabsContent>
               </Tabs>
