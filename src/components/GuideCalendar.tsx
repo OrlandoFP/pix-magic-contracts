@@ -31,6 +31,7 @@ interface ScheduledEvent {
   park: string;
   clientName: string;
   hospedeDisney: boolean;
+  contractId: string;
 }
 
 interface MultipassReminder {
@@ -87,6 +88,7 @@ function parseScheduledDates(contracts: Contract[]): ScheduledEvent[] {
             park: parkMatch || "Parque",
             clientName: contract.nome_completo,
             hospedeDisney: contract.hospede_disney ?? false,
+            contractId: contract.id,
           });
         }
       }
@@ -166,6 +168,14 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedReminder, setSelectedReminder] = useState<MultipassReminder | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+
+  const handleEventClick = (contractId: string) => {
+    const contract = contracts.find(c => c.id === contractId);
+    if (contract) {
+      setSelectedContract(contract);
+    }
+  };
 
   const scheduledEvents = useMemo(() => parseScheduledDates(contracts), [contracts]);
   const multipassReminders = useMemo(() => calculateMultipassReminders(contracts), [contracts]);
@@ -396,63 +406,48 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                   
                   // Empty cells for days before month starts
                   for (let i = 0; i < startDayOfWeek; i++) {
-                    cells.push(<div key={`empty-${i}`} className="h-9" />);
+                    cells.push(<div key={`empty-${i}`} className="min-h-[80px]" />);
                   }
                   
                   // Actual day cells
                   days.forEach((day) => {
                     const dayEvents = scheduledEvents.filter((e) => isSameDay(e.date, day));
                     const hasEvents = dayEvents.length > 0;
-                    const isDisney = dayEvents.some(e => e.hospedeDisney);
                     
-                    if (hasEvents) {
-                      cells.push(
-                        <Popover key={day.toISOString()}>
-                          <PopoverTrigger asChild>
-                            <button
-                              className={`h-9 w-full rounded-md flex items-center justify-center text-sm font-medium transition-colors cursor-pointer ${
-                                isDisney 
-                                  ? "bg-amber-400 text-amber-900 hover:bg-amber-500" 
-                                  : "bg-primary text-primary-foreground hover:bg-primary/90"
-                              }`}
-                            >
-                              {format(day, "d")}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 p-2" align="center">
-                            <div className="space-y-2">
-                              <p className="text-xs font-semibold text-muted-foreground border-b pb-1">
-                                {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                              </p>
-                              {dayEvents.map((event, idx) => (
-                                <div key={idx} className="flex items-start gap-2 p-2 bg-muted/50 rounded-md">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm truncate">{event.clientName}</p>
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <Badge variant="secondary" className="text-xs">
-                                        {event.park}
-                                      </Badge>
-                                      {event.hospedeDisney && (
-                                        <Castle className="h-3 w-3 text-amber-500" />
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      );
-                    } else {
-                      cells.push(
-                        <div
-                          key={day.toISOString()}
-                          className="h-9 flex items-center justify-center text-sm text-muted-foreground"
-                        >
+                    cells.push(
+                      <div
+                        key={day.toISOString()}
+                        className={`min-h-[80px] rounded-md border p-1 ${
+                          hasEvents ? "bg-muted/30 border-primary/30" : "border-transparent"
+                        }`}
+                      >
+                        <div className={`text-xs font-medium mb-1 ${hasEvents ? "text-primary" : "text-muted-foreground"}`}>
                           {format(day, "d")}
                         </div>
-                      );
-                    }
+                        {hasEvents && (
+                          <div className="space-y-1">
+                            {dayEvents.slice(0, 3).map((event, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => handleEventClick(event.contractId)}
+                                className={`w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight truncate hover:opacity-80 transition-opacity cursor-pointer ${
+                                  event.hospedeDisney 
+                                    ? "bg-amber-400 text-amber-900" 
+                                    : "bg-primary text-primary-foreground"
+                                }`}
+                                title={`${event.clientName} - ${event.park}`}
+                              >
+                                <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
+                                <span className="opacity-80 truncate block">{event.park.length > 12 ? event.park.substring(0, 12) + '...' : event.park}</span>
+                              </button>
+                            ))}
+                            {dayEvents.length > 3 && (
+                              <span className="text-[10px] text-muted-foreground">+{dayEvents.length - 3} mais</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
                   });
                   
                   return cells;
@@ -622,6 +617,91 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                 >
                   {isComprado(selectedReminder) ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
                   {isComprado(selectedReminder) ? 'Comprado' : 'Comprar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Contract Details Dialog from Calendar */}
+      <Dialog open={!!selectedContract} onOpenChange={() => setSelectedContract(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl">{selectedContract?.nome_completo}</DialogTitle>
+          </DialogHeader>
+          {selectedContract && (
+            <div className="space-y-4 mt-2">
+              {/* Contact Info */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Contato</p>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{selectedContract.telefone}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">{selectedContract.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">CPF</p>
+                    <p className="font-medium">{selectedContract.cpf}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guide and Pax */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Guia</p>
+                    <p className="font-medium">{selectedContract.nome_guia.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Pax</p>
+                    <p className="font-medium">{selectedContract.quantidade_dias}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parks/Days */}
+              {selectedContract.datas_requeridas && (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-3">Parques / Dias</p>
+                  <div className="space-y-2">
+                    {parseParkEntries(selectedContract.datas_requeridas).map((entry, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-background rounded-md px-3 py-2 border">
+                        <span className="text-sm font-semibold text-primary min-w-[50px]">{entry.date}</span>
+                        <span className="text-sm">{entry.park}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Value */}
+              <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
+                <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Valor Total</p>
+                <p className="text-xl font-bold text-primary">R$ {selectedContract.valor}</p>
+              </div>
+
+              {/* Address */}
+              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-900">
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wide mb-1">Endereço</p>
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm">{selectedContract.endereco} - CEP: {selectedContract.cep}</p>
+                </div>
+              </div>
+
+              {/* Action button */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => handleWhatsApp(selectedContract.telefone, selectedContract.nome_completo)}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
                 </Button>
               </div>
             </div>
