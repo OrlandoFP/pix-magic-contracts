@@ -53,27 +53,32 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
   };
 
   // Parse park entries with dates from datas_requeridas
-  const formatParkDates = (datas: string) => {
+  const parseParkEntries = (datas: string) => {
     const lines = datas.split('\n').filter(line => line.trim());
-    const entries: string[] = [];
+    const entries: { date: string; park: string }[] = [];
     
     lines.forEach(line => {
-      const dateMatch = line.match(/(\d{2})\/(\d{2})\/?\d{0,4}/);
+      const dateMatch = line.match(/(\d{2})\/(\d{2})(?:\/\d{4})?/);
       if (dateMatch) {
         const dayMonth = `${dateMatch[1]}/${dateMatch[2]}`;
         const park = line.replace(/\d{2}\/\d{2}(\/\d{4})?/g, '').replace(/[-–:]/g, '').trim();
-        if (park) {
-          entries.push(`${dayMonth} - ${park}`);
-        } else {
-          entries.push(dayMonth);
-        }
+        entries.push({ date: dayMonth, park: park || 'Passeio' });
       }
     });
     
-    return entries.join(' ');
+    return entries;
   };
 
-  const parkDatesFormatted = formatParkDates(contract.datas_requeridas);
+  const parkEntries = parseParkEntries(contract.datas_requeridas);
+  
+  // Get travel period (first and last date)
+  const getTravelPeriod = () => {
+    if (parkEntries.length === 0) return null;
+    if (parkEntries.length === 1) return parkEntries[0].date;
+    return `${parkEntries[0].date} a ${parkEntries[parkEntries.length - 1].date}`;
+  };
+
+  const travelPeriod = getTravelPeriod();
 
   return (
     <Card className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}>
@@ -115,25 +120,53 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
             {/* Info and actions row */}
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Contact and period info */}
-              <div className="flex-1 bg-muted/50 rounded-lg p-4 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Contato Principal</p>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{contract.telefone}</span>
+              <div className="flex-1 space-y-4">
+                {/* Client info card */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Nome do Cliente</p>
+                      <p className="font-medium">{contract.nome_completo}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">{contract.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Período da Viagem</p>
-                    <div className="flex items-start gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <span className="font-medium text-sm">
-                        {parkDatesFormatted || contract.datas_requeridas}
-                      </span>
+                    <div>
+                      <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Contato</p>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{contract.telefone}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{contract.email}</p>
                     </div>
                   </div>
+                </div>
+
+                {/* Period card */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-2">Período da Viagem</p>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{travelPeriod || 'Não definido'}</span>
+                  </div>
+                </div>
+
+                {/* Parks/Days card */}
+                {parkEntries.length > 0 && (
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-3">Parques / Dias</p>
+                    <div className="space-y-2">
+                      {parkEntries.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-3 bg-background rounded-md px-3 py-2 border">
+                          <span className="text-sm font-semibold text-primary min-w-[50px]">{entry.date}</span>
+                          <span className="text-sm">{entry.park}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Value card */}
+                <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
+                  <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Valor Total</p>
+                  <p className="text-xl font-bold text-primary">R$ {contract.valor}</p>
                 </div>
 
                 {/* Address */}
