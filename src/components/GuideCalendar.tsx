@@ -1,18 +1,23 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Users, AlertTriangle, Castle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart } from "lucide-react";
 import { format, isValid, subDays, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Contract {
   id: string;
   nome_completo: string;
+  telefone: string;
   datas_requeridas: string;
   nome_guia: string;
   quantidade_dias: number;
   hospede_disney?: boolean;
+  comprado?: boolean;
 }
 
 interface ScheduledEvent {
@@ -23,11 +28,14 @@ interface ScheduledEvent {
 }
 
 interface MultipassReminder {
+  contractId: string;
   clientName: string;
+  telefone: string;
   buyDate: Date;
   tripStartDate: Date;
   hospedeDisney: boolean;
   daysUntilBuy: number;
+  comprado: boolean;
 }
 
 interface GuideCalendarProps {
@@ -115,11 +123,14 @@ function calculateMultipassReminders(contracts: Contract[]): MultipassReminder[]
       
       if (isBefore(buyDate, fourteenDaysFromNow) && isAfter(earliestDate, today)) {
         reminders.push({
+          contractId: contract.id,
           clientName: contract.nome_completo,
+          telefone: contract.telefone,
           buyDate,
           tripStartDate: earliestDate,
           hospedeDisney,
           daysUntilBuy,
+          comprado: contract.comprado ?? false,
         });
       }
     }
@@ -129,6 +140,9 @@ function calculateMultipassReminders(contracts: Contract[]): MultipassReminder[]
 }
 
 export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
+  const [compradoStatus, setCompradoStatus] = useState<Record<string, boolean>>({});
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
   const scheduledEvents = useMemo(() => parseScheduledDates(contracts), [contracts]);
   const multipassReminders = useMemo(() => calculateMultipassReminders(contracts), [contracts]);
   
@@ -144,6 +158,34 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
       .filter((e) => e.date >= now && e.date <= thirtyDaysFromNow)
       .sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [scheduledEvents]);
+
+  const handleWhatsApp = (telefone: string, clientName: string) => {
+    const phone = telefone.replace(/\D/g, '');
+    const message = encodeURIComponent(`Olá ${clientName.split(' ')[0]}! Aqui é da equipe de guias. Estou entrando em contato sobre a compra do Multipass.`);
+    window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
+  };
+
+  const handleToggleComprado = async (contractId: string, currentStatus: boolean) => {
+    setUpdatingId(contractId);
+    const newValue = !currentStatus;
+    
+    const { error } = await supabase
+      .from('contracts')
+      .update({ comprado: newValue })
+      .eq('id', contractId);
+    
+    if (error) {
+      toast.error('Erro ao atualizar status');
+    } else {
+      setCompradoStatus(prev => ({ ...prev, [contractId]: newValue }));
+      toast.success(newValue ? 'Marcado como comprado' : 'Desmarcado');
+    }
+    setUpdatingId(null);
+  };
+
+  const isComprado = (reminder: MultipassReminder) => {
+    return compradoStatus[reminder.contractId] ?? reminder.comprado;
+  };
 
   return (
     <div className="space-y-6">
@@ -184,7 +226,15 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{reminder.clientName}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{reminder.clientName}</p>
+                      {isComprado(reminder) && (
+                        <Badge className="bg-green-600 text-white text-xs gap-1">
+                          <Check className="h-3 w-3" />
+                          Comprado
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge 
                         variant="outline" 
@@ -214,6 +264,29 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                     <p className="text-xs text-muted-foreground mt-1">
                       Viagem: {format(reminder.tripStartDate, "dd/MM/yyyy")}
                     </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      size="sm"
+                      className={`gap-1 ${
+                        isComprado(reminder) 
+                          ? 'bg-green-600 hover:bg-green-700 text-white' 
+                          : 'bg-amber-500 hover:bg-amber-600 text-white'
+                      }`}
+                      onClick={() => handleToggleComprado(reminder.contractId, isComprado(reminder))}
+                      disabled={updatingId === reminder.contractId}
+                    >
+                      {isComprado(reminder) ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+                      <span className="hidden sm:inline">{isComprado(reminder) ? 'Comprado' : 'Comprar'}</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-1 bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => handleWhatsApp(reminder.telefone, reminder.clientName)}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span className="hidden sm:inline">WhatsApp</span>
+                    </Button>
                   </div>
                 </div>
               ))}
