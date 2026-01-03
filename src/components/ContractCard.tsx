@@ -52,38 +52,28 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
     pdf.save(`contrato-${contract.nome_completo.replace(/\s+/g, '-').toLowerCase()}.pdf`);
   };
 
-  // Parse dates from datas_requeridas to show period
-  const parseDates = (datas: string) => {
-    const datePattern = /\d{2}\/\d{2}\/\d{4}/g;
-    const matches = datas.match(datePattern);
-    if (matches && matches.length > 0) {
-      return {
-        start: matches[0],
-        end: matches[matches.length - 1],
-      };
-    }
-    return null;
-  };
-
-  const period = parseDates(contract.datas_requeridas);
-
-  // Parse park entries from datas_requeridas
-  const parseParkEntries = (datas: string) => {
+  // Parse park entries with dates from datas_requeridas
+  const formatParkDates = (datas: string) => {
     const lines = datas.split('\n').filter(line => line.trim());
-    const entries: { park: string; date: string }[] = [];
+    const entries: string[] = [];
     
     lines.forEach(line => {
-      const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{4})/);
+      const dateMatch = line.match(/(\d{2})\/(\d{2})\/?\d{0,4}/);
       if (dateMatch) {
-        const park = line.replace(dateMatch[0], '').replace(/[-–:]/g, '').trim();
-        entries.push({ park: park || 'Parque', date: dateMatch[1] });
+        const dayMonth = `${dateMatch[1]}/${dateMatch[2]}`;
+        const park = line.replace(/\d{2}\/\d{2}(\/\d{4})?/g, '').replace(/[-–:]/g, '').trim();
+        if (park) {
+          entries.push(`${dayMonth} - ${park}`);
+        } else {
+          entries.push(dayMonth);
+        }
       }
     });
     
-    return entries;
+    return entries.join(' ');
   };
 
-  const parkEntries = parseParkEntries(contract.datas_requeridas);
+  const parkDatesFormatted = formatParkDates(contract.datas_requeridas);
 
   return (
     <Card className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}>
@@ -137,29 +127,14 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                   </div>
                   <div>
                     <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Período da Viagem</p>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">
-                        {period ? `${period.start} a ${period.end}` : contract.datas_requeridas.substring(0, 30)}
+                    <div className="flex items-start gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <span className="font-medium text-sm">
+                        {parkDatesFormatted || contract.datas_requeridas}
                       </span>
                     </div>
                   </div>
                 </div>
-
-                {/* Park entries */}
-                {parkEntries.length > 0 && (
-                  <div>
-                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-2">Roteiro Selecionado</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {parkEntries.map((entry, index) => (
-                        <div key={index} className="bg-background rounded-lg border p-3 flex justify-between items-center">
-                          <span className="text-sm font-medium truncate">{entry.park}</span>
-                          <span className="text-xs text-primary font-semibold ml-2">{entry.date}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Address */}
                 <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-900">
