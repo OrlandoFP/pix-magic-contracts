@@ -66,6 +66,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       cep: contract.cep,
       nomeGuia: contract.nome_guia,
       valor: contract.valor,
+      datasRequeridas: contract.datas_requeridas,
     } : undefined,
   });
 
@@ -101,6 +102,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           telefone: data.telefone,
           nome_guia: data.nomeGuia,
           valor: data.valor,
+          datas_requeridas: data.datasRequeridas || "",
         })
         .eq("id", contract.id);
 
@@ -238,10 +240,13 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <Label>Datas Requeridas</Label>
-              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-                {contract?.datas_requeridas || "Nenhuma data"}
-              </p>
+              <Label htmlFor="edit-datasRequeridas">Datas Requeridas</Label>
+              <Textarea
+                id="edit-datasRequeridas"
+                {...register("datasRequeridas")}
+                placeholder="Ex: 06/01 - Magic Kingdom, 07/01 - Animal Kingdom"
+                className="min-h-[80px]"
+              />
             </div>
           </div>
 
