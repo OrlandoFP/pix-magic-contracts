@@ -16,7 +16,7 @@ import {
   formatCEP,
   formatPhone,
 } from "@/lib/contract-validation";
-import { ParkDateSelector, type ParkSelection, formatParkSelections } from "./ParkDateSelector";
+import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
 
 export function ContractForm() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -84,11 +84,28 @@ export function ContractForm() {
         if (parsed.telefone) setValue("telefone", formatPhone(parsed.telefone));
         if (parsed.cep) setValue("cep", formatCEP(parsed.cep));
         if (parsed.endereco) setValue("endereco", parsed.endereco);
-        // Note: Park selections are handled separately via ParkDateSelector
+        
+        // Parse park dates from AI response
+        if (parsed.parkDates && Array.isArray(parsed.parkDates)) {
+          const newSelections: ParkSelection[] = [];
+          parsed.parkDates.forEach((pd: { parkId: string; date: string }) => {
+            const park = PARKS.find(p => p.id === pd.parkId);
+            if (park && pd.date) {
+              newSelections.push({
+                parkId: pd.parkId,
+                parkName: park.name,
+                date: new Date(pd.date),
+              });
+            }
+          });
+          if (newSelections.length > 0) {
+            setParkSelections(newSelections);
+          }
+        }
 
         toast({
           title: "Dados preenchidos!",
-          description: "Verifique os campos e selecione os parques com suas datas.",
+          description: "Verifique os campos e as datas dos parques.",
         });
       }
     } catch (error) {

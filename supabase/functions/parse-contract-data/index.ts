@@ -27,12 +27,19 @@ Extraia os seguintes campos do texto fornecido e retorne um JSON válido:
 - telefone: telefone com DDD (formato (XX) XXXXX-XXXX)
 - cep: CEP (formato XXXXX-XXX)
 - endereco: endereço completo
-- datasRequeridas: todas as datas e parques mencionados, em formato de texto
-- quantidadeDias: número de dias de guiamento (conte quantos dias/parques foram listados)
-- valor: deixe vazio, será preenchido depois
-- nomeGuia: deixe vazio, será selecionado depois
+- parkDates: array de objetos com parkId e date para cada parque mencionado. Use estes IDs exatos:
+  - "magic-kingdom" para Magic Kingdom
+  - "epcot" para EPCOT
+  - "hollywood-studios" para Hollywood Studios
+  - "animal-kingdom" para Animal Kingdom
+  - "epic-universe" para EPIC Universe
+  - "universal-studios" para Universal Studios
+  - "islands-adventure" para Islands of Adventure
+  Formato de cada item: { "parkId": "magic-kingdom", "date": "2025-01-15" } (use formato ISO YYYY-MM-DD)
+  
+Exemplo de parkDates: [{"parkId": "magic-kingdom", "date": "2025-01-07"}, {"parkId": "epcot", "date": "2025-01-08"}]
 
-Se um campo não for encontrado, deixe como string vazia.
+Se um campo não for encontrado, deixe como string vazia ou array vazio para parkDates.
 Retorne APENAS o JSON, sem explicações.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
