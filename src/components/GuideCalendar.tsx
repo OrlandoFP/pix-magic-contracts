@@ -3,7 +3,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, X } from "lucide-react";
 import { format, isValid, subDays, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,9 +14,14 @@ interface Contract {
   id: string;
   nome_completo: string;
   telefone: string;
+  email: string;
+  cpf: string;
+  endereco: string;
+  cep: string;
   datas_requeridas: string;
   nome_guia: string;
   quantidade_dias: number;
+  valor: string;
   hospede_disney?: boolean;
   comprado?: boolean;
 }
@@ -31,11 +37,19 @@ interface MultipassReminder {
   contractId: string;
   clientName: string;
   telefone: string;
+  email: string;
+  cpf: string;
+  endereco: string;
+  cep: string;
+  valor: string;
+  nomeGuia: string;
+  quantidadeDias: number;
   buyDate: Date;
   tripStartDate: Date;
   hospedeDisney: boolean;
   daysUntilBuy: number;
   comprado: boolean;
+  datasRequeridas: string;
 }
 
 interface GuideCalendarProps {
@@ -126,6 +140,14 @@ function calculateMultipassReminders(contracts: Contract[]): MultipassReminder[]
           contractId: contract.id,
           clientName: contract.nome_completo,
           telefone: contract.telefone,
+          email: contract.email,
+          cpf: contract.cpf,
+          endereco: contract.endereco,
+          cep: contract.cep,
+          valor: contract.valor,
+          nomeGuia: contract.nome_guia,
+          quantidadeDias: contract.quantidade_dias,
+          datasRequeridas: contract.datas_requeridas,
           buyDate,
           tripStartDate: earliestDate,
           hospedeDisney,
@@ -142,6 +164,7 @@ function calculateMultipassReminders(contracts: Contract[]): MultipassReminder[]
 export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   const [compradoStatus, setCompradoStatus] = useState<Record<string, boolean>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedReminder, setSelectedReminder] = useState<MultipassReminder | null>(null);
 
   const scheduledEvents = useMemo(() => parseScheduledDates(contracts), [contracts]);
   const multipassReminders = useMemo(() => calculateMultipassReminders(contracts), [contracts]);
@@ -187,6 +210,23 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
     return compradoStatus[reminder.contractId] ?? reminder.comprado;
   };
 
+  // Parse park entries with dates from datas_requeridas
+  const parseParkEntries = (datas: string) => {
+    const lines = datas.split('\n').filter(line => line.trim());
+    const entries: { date: string; park: string }[] = [];
+    
+    lines.forEach(line => {
+      const dateMatch = line.match(/(\d{2})\/(\d{2})(?:\/\d{4})?/);
+      if (dateMatch) {
+        const dayMonth = `${dateMatch[1]}/${dateMatch[2]}`;
+        const park = line.replace(/\d{2}\/\d{2}(\/\d{4})?/g, '').replace(/[-–:]/g, '').trim();
+        entries.push({ date: dayMonth, park: park || 'Passeio' });
+      }
+    });
+    
+    return entries;
+  };
+
   return (
     <div className="space-y-6">
       {/* Multipass Reminders */}
@@ -227,7 +267,12 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium truncate">{reminder.clientName}</p>
+                      <button 
+                        className="font-medium truncate text-left hover:text-primary hover:underline cursor-pointer transition-colors"
+                        onClick={() => setSelectedReminder(reminder)}
+                      >
+                        {reminder.clientName}
+                      </button>
                       {isComprado(reminder) && (
                         <Badge className="bg-green-600 text-white text-xs gap-1">
                           <Check className="h-3 w-3" />
@@ -393,6 +438,103 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
           </p>
         </Card>
       </div>
+
+      {/* Client Details Dialog */}
+      <Dialog open={!!selectedReminder} onOpenChange={() => setSelectedReminder(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl">{selectedReminder?.clientName}</DialogTitle>
+          </DialogHeader>
+          {selectedReminder && (
+            <div className="space-y-4 mt-2">
+              {/* Contact Info */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Contato</p>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{selectedReminder.telefone}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">{selectedReminder.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">CPF</p>
+                    <p className="font-medium">{selectedReminder.cpf}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guide and Pax */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Guia</p>
+                    <p className="font-medium">{selectedReminder.nomeGuia.toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Pax</p>
+                    <p className="font-medium">{selectedReminder.quantidadeDias}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parks/Days */}
+              {selectedReminder.datasRequeridas && (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-3">Parques / Dias</p>
+                  <div className="space-y-2">
+                    {parseParkEntries(selectedReminder.datasRequeridas).map((entry, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-background rounded-md px-3 py-2 border">
+                        <span className="text-sm font-semibold text-primary min-w-[50px]">{entry.date}</span>
+                        <span className="text-sm">{entry.park}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Value */}
+              <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
+                <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Valor Total</p>
+                <p className="text-xl font-bold text-primary">R$ {selectedReminder.valor}</p>
+              </div>
+
+              {/* Address */}
+              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-900">
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wide mb-1">Endereço</p>
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm">{selectedReminder.endereco} - CEP: {selectedReminder.cep}</p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => handleWhatsApp(selectedReminder.telefone, selectedReminder.clientName)}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </Button>
+                <Button
+                  className={`flex-1 gap-2 ${
+                    isComprado(selectedReminder) 
+                      ? 'bg-green-600 hover:bg-green-700 text-white' 
+                      : 'bg-amber-500 hover:bg-amber-600 text-white'
+                  }`}
+                  onClick={() => handleToggleComprado(selectedReminder.contractId, isComprado(selectedReminder))}
+                  disabled={updatingId === selectedReminder.contractId}
+                >
+                  {isComprado(selectedReminder) ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+                  {isComprado(selectedReminder) ? 'Comprado' : 'Comprar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
