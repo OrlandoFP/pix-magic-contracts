@@ -426,7 +426,7 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                         </div>
                         {hasEvents && (
                           <div className="space-y-1">
-                            {dayEvents.slice(0, 3).map((event, idx) => (
+                            {dayEvents.map((event, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => handleEventClick(event.contractId)}
@@ -441,9 +441,6 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                                 <span className="opacity-80 truncate block">{event.park.length > 12 ? event.park.substring(0, 12) + '...' : event.park}</span>
                               </button>
                             ))}
-                            {dayEvents.length > 3 && (
-                              <span className="text-[10px] text-muted-foreground">+{dayEvents.length - 3} mais</span>
-                            )}
                           </div>
                         )}
                       </div>
