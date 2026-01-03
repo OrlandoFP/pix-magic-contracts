@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { format } from "date-fns";
+import { useState, useEffect } from "react";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 
-const PARKS = [
+export const PARKS = [
   { id: "magic-kingdom", name: "Magic Kingdom" },
   { id: "epcot", name: "EPCOT" },
   { id: "hollywood-studios", name: "Hollywood Studios" },
@@ -42,6 +42,15 @@ export function ParkDateSelector({ value, onChange }: ParkDateSelectorProps) {
     });
     return initial;
   });
+
+  // Sync with external value changes (e.g., from AI parsing)
+  useEffect(() => {
+    const newState: Record<string, Date | null> = {};
+    value.forEach((selection) => {
+      newState[selection.parkId] = selection.date;
+    });
+    setSelectedParks(newState);
+  }, [value.map(v => `${v.parkId}-${v.date?.getTime()}`).join(',')]);
 
   const handleParkToggle = (parkId: string, parkName: string, checked: boolean) => {
     const updated = { ...selectedParks };
