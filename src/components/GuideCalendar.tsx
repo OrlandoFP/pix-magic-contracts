@@ -190,7 +190,7 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   return (
     <div className="space-y-6">
       {/* Multipass Reminders */}
-      {multipassReminders.length > 0 && (
+      {multipassReminders.filter(r => !(compradoStatus[r.contractId] ?? r.comprado)).length > 0 && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg text-amber-700 dark:text-amber-400">
@@ -200,7 +200,7 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {multipassReminders.map((reminder, index) => (
+              {multipassReminders.filter(r => !(compradoStatus[r.contractId] ?? r.comprado)).map((reminder, index) => (
                 <div
                   key={`reminder-${index}`}
                   className={`flex items-center gap-3 p-3 rounded-lg border ${
