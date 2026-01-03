@@ -9,6 +9,7 @@ export const contractFormSchema = z.object({
   telefone: z.string().trim().regex(/^\(?[1-9]{2}\)?\s?(?:9\d{4}|[2-9]\d{3})-?\d{4}$/, "Telefone inválido"),
   nomeGuia: z.string().trim().min(2, "Nome do guia deve ter pelo menos 2 caracteres").max(100, "Nome do guia deve ter no máximo 100 caracteres"),
   valor: z.string().trim().regex(/^\d+([.,]\d{1,2})?$/, "Valor inválido"),
+  datasRequeridas: z.string().trim().optional(),
 });
 
 export type ContractFormData = z.infer<typeof contractFormSchema>;
