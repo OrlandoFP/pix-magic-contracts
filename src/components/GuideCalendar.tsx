@@ -351,156 +351,155 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
         </Card>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Calendar */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              Agenda de {guideName}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border p-3">
-              {/* Calendar Header */}
-              <div className="flex justify-between items-center mb-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium">
-                  {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Day names */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {["dom", "seg", "ter", "qua", "qui", "sex", "sab"].map((day) => (
-                  <div key={day} className="text-center text-xs text-muted-foreground font-medium py-1">
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {/* Calendar Days */}
-              <div className="grid grid-cols-7 gap-1">
-                {(() => {
-                  const monthStart = startOfMonth(currentMonth);
-                  const monthEnd = endOfMonth(currentMonth);
-                  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-                  const startDayOfWeek = getDay(monthStart);
-                  
-                  const cells = [];
-                  
-                  // Empty cells for days before month starts
-                  for (let i = 0; i < startDayOfWeek; i++) {
-                    cells.push(<div key={`empty-${i}`} className="min-h-[80px]" />);
-                  }
-                  
-                  // Actual day cells
-                  days.forEach((day) => {
-                    const dayEvents = scheduledEvents.filter((e) => isSameDay(e.date, day));
-                    const hasEvents = dayEvents.length > 0;
-                    
-                    cells.push(
-                      <div
-                        key={day.toISOString()}
-                        className={`min-h-[80px] rounded-md border p-1 ${
-                          hasEvents ? "bg-muted/30 border-primary/30" : "border-transparent"
-                        }`}
-                      >
-                        <div className={`text-xs font-medium mb-1 ${hasEvents ? "text-primary" : "text-muted-foreground"}`}>
-                          {format(day, "d")}
-                        </div>
-                        {hasEvents && (
-                          <div className="space-y-1">
-                            {dayEvents.map((event, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => handleEventClick(event.contractId)}
-                                className={`w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight truncate hover:opacity-80 transition-opacity cursor-pointer ${
-                                  event.hospedeDisney 
-                                    ? "bg-amber-400 text-amber-900" 
-                                    : "bg-primary text-primary-foreground"
-                                }`}
-                                title={`${event.clientName} - ${event.park}`}
-                              >
-                                <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
-                                <span className="opacity-80 truncate block">{event.park.length > 12 ? event.park.substring(0, 12) + '...' : event.park}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  });
-                  
-                  return cells;
-                })()}
-              </div>
+      {/* Calendar - Full Width */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            Agenda de {guideName}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border p-3">
+            {/* Calendar Header */}
+            <div className="flex justify-between items-center mb-4">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium">
+                {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-        
-        {/* Upcoming Events */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users className="h-5 w-5 text-primary" />
-              Próximos Atendimentos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {upcomingEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                <p>Nenhum atendimento agendado</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                {upcomingEvents.map((event, index) => (
-                  <div
-                    key={`${event.date.toISOString()}-${index}`}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border"
-                  >
-                    <div className="flex flex-col items-center justify-center w-12 h-12 rounded-md bg-primary text-primary-foreground text-sm font-bold">
-                      <span className="text-xs uppercase">
-                        {format(event.date, "MMM", { locale: ptBR })}
-                      </span>
-                      <span className="text-lg leading-none">
-                        {format(event.date, "dd")}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">{event.clientName}</p>
-                        {event.hospedeDisney && (
-                          <Castle className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                        )}
+
+            {/* Day names */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {["dom", "seg", "ter", "qua", "qui", "sex", "sab"].map((day) => (
+                <div key={day} className="text-center text-xs text-muted-foreground font-medium py-1">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7 gap-1">
+              {(() => {
+                const monthStart = startOfMonth(currentMonth);
+                const monthEnd = endOfMonth(currentMonth);
+                const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                const startDayOfWeek = getDay(monthStart);
+                
+                const cells = [];
+                
+                // Empty cells for days before month starts
+                for (let i = 0; i < startDayOfWeek; i++) {
+                  cells.push(<div key={`empty-${i}`} className="min-h-[80px]" />);
+                }
+                
+                // Actual day cells
+                days.forEach((day) => {
+                  const dayEvents = scheduledEvents.filter((e) => isSameDay(e.date, day));
+                  const hasEvents = dayEvents.length > 0;
+                  
+                  cells.push(
+                    <div
+                      key={day.toISOString()}
+                      className={`min-h-[80px] rounded-md border p-1 ${
+                        hasEvents ? "bg-muted/30 border-primary/30" : "border-transparent"
+                      }`}
+                    >
+                      <div className={`text-xs font-medium mb-1 ${hasEvents ? "text-primary" : "text-muted-foreground"}`}>
+                        {format(day, "d")}
                       </div>
-                      <Badge variant="secondary" className="mt-1 text-xs">
-                        {event.park}
-                      </Badge>
+                      {hasEvents && (
+                        <div className="space-y-1">
+                          {dayEvents.map((event, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleEventClick(event.contractId)}
+                              className={`w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight truncate hover:opacity-80 transition-opacity cursor-pointer ${
+                                event.hospedeDisney 
+                                  ? "bg-amber-400 text-amber-900" 
+                                  : "bg-primary text-primary-foreground"
+                              }`}
+                              title={`${event.clientName} - ${event.park}`}
+                            >
+                              <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
+                              <span className="opacity-80 truncate block">{event.park.length > 12 ? event.park.substring(0, 12) + '...' : event.park}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                  );
+                });
+                
+                return cells;
+              })()}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Upcoming Events - Full Width Below */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Users className="h-5 w-5 text-primary" />
+            Próximos Atendimentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {upcomingEvents.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p>Nenhum atendimento agendado</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {upcomingEvents.map((event, index) => (
+                <button
+                  key={`${event.date.toISOString()}-${index}`}
+                  onClick={() => handleEventClick(event.contractId)}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border hover:bg-muted/80 transition-colors cursor-pointer text-left"
+                >
+                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-md bg-primary text-primary-foreground text-sm font-bold">
+                    <span className="text-xs uppercase">
+                      {format(event.date, "MMM", { locale: ptBR })}
+                    </span>
+                    <span className="text-lg leading-none">
+                      {format(event.date, "dd")}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{event.clientName}</p>
+                      {event.hospedeDisney && (
+                        <Castle className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                      )}
+                    </div>
+                    <Badge variant="secondary" className="mt-1 text-xs">
+                      {event.park}
+                    </Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
