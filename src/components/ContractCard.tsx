@@ -84,6 +84,14 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
     setIsUpdating(false);
   };
 
+  // Disney parks list
+  const disneyParks = ['magic kingdom', 'epcot', 'animal kingdom', 'hollywood studios'];
+  
+  const isDisneyPark = (parkName: string) => {
+    const normalized = parkName.toLowerCase();
+    return disneyParks.some(dp => normalized.includes(dp));
+  };
+
   // Parse park entries with dates from datas_requeridas
   const parseParkEntries = (datas: string) => {
     const lines = datas.split('\n').filter(line => line.trim());
@@ -102,6 +110,18 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
   };
 
   const parkEntries = parseParkEntries(contract.datas_requeridas);
+  
+  // Check if first Disney park exists in the schedule
+  const hasFirstDisneyPark = parkEntries.some(entry => isDisneyPark(entry.park));
+  
+  // Determine D-7 or D-3 based on first park date being Disney
+  const getDeadlineType = () => {
+    if (parkEntries.length === 0) return 'D-3';
+    const firstPark = parkEntries[0];
+    return isDisneyPark(firstPark.park) ? 'D-7' : 'D-3';
+  };
+  
+  const deadlineType = getDeadlineType();
   
   // Get travel period (first and last date)
   const getTravelPeriod = () => {
@@ -148,7 +168,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
             </Badge>
           )}
           <Badge variant="outline" className="hidden sm:inline-flex">
-            {contract.hospede_disney ? "D-7" : "D-3"}
+            {deadlineType}
           </Badge>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
