@@ -97,17 +97,17 @@ function renderPage1(
   doc.text("CONTRATO DE PRESTAÇÃO DE SERVIÇOS", pageWidth / 2, y, { align: "center" });
 
   // Section 1 - Dados do Viajante
-  y += 15;
-  doc.setFontSize(12);
+  y += 18;
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...PURPLE);
   doc.text("1. DADOS DO VIAJANTE (CONTRATANTE)", margin, y);
 
   // Table for client data
-  y += 8;
+  y += 10;
   const tableStartY = y;
-  const rowHeight = 12;
-  const col1Width = 80;
+  const rowHeight = 14;
+  const col1Width = 90;
   const col2Width = contentWidth - col1Width;
 
   doc.setDrawColor(...BLACK);
@@ -132,13 +132,13 @@ function renderPage1(
   y += rowHeight;
 
   // Section 2 - Dados da Contratada
-  y += 10;
-  doc.setFontSize(12);
+  y += 12;
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...PURPLE);
   doc.text("2. DADOS DA CONTRATADA (ORLANDO FAST PASS)", margin, y);
 
-  y += 8;
+  y += 10;
   // Row 1: Razão Social | CNPJ
   drawTableRow(doc, margin, y, col1Width, rowHeight, "Razão Social:", "Orlando Fast Pass");
   drawTableRow(doc, margin + col1Width, y, col2Width, rowHeight, "CNPJ:", "33.142.150/0001-99");
