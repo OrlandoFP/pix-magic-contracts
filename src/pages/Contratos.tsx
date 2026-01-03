@@ -3,11 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, User } from "lucide-react";
+import { ArrowLeft, FileText, User, CalendarDays, List } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { GuideCalendar } from "@/components/GuideCalendar";
+import { Button } from "@/components/ui/button";
 
 interface Contract {
   id: string;
@@ -27,6 +29,7 @@ interface Contract {
 const Contratos = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -44,6 +47,40 @@ const Contratos = () => {
     };
 
     fetchContracts();
+
+    // Real-time subscription
+    const channel = supabase
+      .channel("contracts-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "contracts",
+        },
+        (payload) => {
+          console.log("Realtime update:", payload);
+          
+          if (payload.eventType === "INSERT") {
+            setContracts((prev) => [payload.new as Contract, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setContracts((prev) =>
+              prev.map((c) =>
+                c.id === (payload.new as Contract).id ? (payload.new as Contract) : c
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setContracts((prev) =>
+              prev.filter((c) => c.id !== (payload.old as Contract).id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const rafaelContracts = contracts.filter(
@@ -88,14 +125,16 @@ const Contratos = () => {
                 </TableCell>
                 <TableCell>{contract.email}</TableCell>
                 <TableCell>{contract.telefone}</TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  {contract.datas_requeridas}
+                <TableCell className="max-w-[200px]">
+                  <p className="truncate" title={contract.datas_requeridas}>
+                    {contract.datas_requeridas}
+                  </p>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{contract.quantidade_dias}</Badge>
                 </TableCell>
                 <TableCell className="font-semibold text-primary">
-                  {contract.valor}
+                  R$ {contract.valor}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {format(new Date(contract.created_at), "dd/MM/yyyy HH:mm", {
@@ -122,10 +161,10 @@ const Contratos = () => {
             Voltar
           </Link>
           <h1 className="font-display text-3xl md:text-4xl font-bold">
-            Contratos Salvos
+            Agenda dos Guias
           </h1>
           <p className="text-primary-foreground/80 mt-2">
-            Visualize todos os contratos gerados por guia
+            Calendário em tempo real com todos os atendimentos
           </p>
         </div>
       </header>
@@ -133,10 +172,32 @@ const Contratos = () => {
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Contratos por Guia
-            </CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Contratos por Guia
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={viewMode === "calendar" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("calendar")}
+                  className="gap-2"
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  Agenda
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                  className="gap-2"
+                >
+                  <List className="h-4 w-4" />
+                  Lista
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -159,11 +220,21 @@ const Contratos = () => {
                     </Badge>
                   </TabsTrigger>
                 </TabsList>
+                
                 <TabsContent value="rafael">
-                  <ContractTable data={rafaelContracts} />
+                  {viewMode === "calendar" ? (
+                    <GuideCalendar contracts={rafaelContracts} guideName="Rafael" />
+                  ) : (
+                    <ContractTable data={rafaelContracts} />
+                  )}
                 </TabsContent>
+                
                 <TabsContent value="kleber">
-                  <ContractTable data={kleberContracts} />
+                  {viewMode === "calendar" ? (
+                    <GuideCalendar contracts={kleberContracts} guideName="Kleber" />
+                  ) : (
+                    <ContractTable data={kleberContracts} />
+                  )}
                 </TabsContent>
               </Tabs>
             )}
