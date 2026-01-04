@@ -18,29 +18,41 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Você é um assistente especializado em extrair dados de contratos de guiamento Disney.
-Extraia os seguintes campos do texto fornecido e retorne um JSON válido:
+    const systemPrompt = `Você é um assistente especializado em extrair dados de formulários de reserva de guiamento Disney/Orlando.
+
+O texto segue este formato de template:
+- DADOS PESSOAIS: Nome completo, CPF, E-mail, Telefone, Endereço completo, CEP
+- PARQUES E DATAS: Lista de parques onde o cliente preenche a data de visita (formato DD/MM/YYYY ou DD/MM/YY)
+- INFORMAÇÕES ADICIONAIS: Hóspede Disney (Sim/Não), Nome do guia
+
+Extraia e retorne um JSON com:
 
 - nomeCompleto: nome completo do cliente
-- email: email do cliente
-- cpf: CPF do cliente (apenas números, formato XXX.XXX.XXX-XX)
+- email: email do cliente  
+- cpf: CPF (mantenha formatação XXX.XXX.XXX-XX se presente)
 - telefone: telefone com DDD (formato (XX) XXXXX-XXXX)
 - cep: CEP (formato XXXXX-XXX)
 - endereco: endereço completo
-- parkDates: array de objetos com parkId e date para cada parque mencionado. Use estes IDs exatos:
+- hospedeDisney: boolean (true se "Sim", false se "Não" ou não informado)
+- nomeGuia: nome do guia se informado
+- parkDates: array de objetos para cada parque COM DATA preenchida. Use estes IDs:
   - "magic-kingdom" para Magic Kingdom
   - "epcot" para EPCOT
   - "hollywood-studios" para Hollywood Studios
   - "animal-kingdom" para Animal Kingdom
-  - "epic-universe" para EPIC Universe
+  - "epic-universe" para Epic Universe
   - "universal-studios" para Universal Studios
   - "islands-adventure" para Islands of Adventure
-  Formato de cada item: { "parkId": "magic-kingdom", "date": "2025-01-15" } (use formato ISO YYYY-MM-DD)
+  - "seaworld" para SeaWorld
+  - "busch-gardens" para Busch Gardens
   
-Exemplo de parkDates: [{"parkId": "magic-kingdom", "date": "2025-01-07"}, {"parkId": "epcot", "date": "2025-01-08"}]
+  IMPORTANTE: Converta datas de DD/MM/YYYY para formato ISO YYYY-MM-DD
+  Exemplo: "15/01/2025" → "2025-01-15"
+  
+  Formato: { "parkId": "magic-kingdom", "date": "2025-01-15" }
 
-Se um campo não for encontrado, deixe como string vazia ou array vazio para parkDates.
-Retorne APENAS o JSON, sem explicações.`;
+IGNORE parques sem data preenchida (linhas com apenas ":" ou vazias).
+Retorne APENAS o JSON válido, sem explicações ou markdown.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
