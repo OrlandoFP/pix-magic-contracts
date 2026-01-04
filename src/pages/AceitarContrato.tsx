@@ -20,8 +20,10 @@ import {
   QrCode,
   Upload,
   Copy,
-  Check
+  Check,
+  Download
 } from "lucide-react";
+import { generateContractPDF } from "@/lib/contract-pdf";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -302,6 +304,30 @@ const AceitarContrato = () => {
                   : new Date().toLocaleString("pt-BR")
                 }
               </p>
+              <Button
+                variant="outline"
+                className="mt-4 gap-2"
+                onClick={() => {
+                  if (!contract) return;
+                  const pdf = generateContractPDF({
+                    nomeCompleto: contract.nome_completo,
+                    cpf: contract.cpf,
+                    endereco: contract.endereco,
+                    cep: contract.cep,
+                    email: contract.email,
+                    telefone: contract.telefone,
+                    datasRequeridas: contract.datas_requeridas,
+                    nomeGuia: contract.nome_guia,
+                    quantidadeDias: String(contract.quantidade_dias),
+                    valor: contract.valor,
+                    quantidadePessoas: String(contract.quantidade_pessoas || 1),
+                  });
+                  pdf.save(`Contrato_${contract.nome_completo.replace(/\s+/g, "_")}.pdf`);
+                }}
+              >
+                <Download className="h-4 w-4" />
+                Baixar Contrato em PDF
+              </Button>
             </CardContent>
           </Card>
 
