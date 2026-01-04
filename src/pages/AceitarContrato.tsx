@@ -16,8 +16,14 @@ import {
   User,
   Loader2,
   AlertCircle,
-  ScrollText
+  ScrollText,
+  QrCode,
+  Upload,
+  Copy,
+  Check
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const CONTRACT_TERMS = `Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.
 
@@ -45,6 +51,8 @@ NÃO GARANTIMOS NENHUM AGENDAMENTO DE ATRAÇÃO ESPECÍFICA, mas faremos de tudo
 
 Agendamento e guiamento serão feitos até as 18h, podendo ser estendido.`;
 
+const PIX_CNPJ = "33142150000199";
+
 interface ContractData {
   id: string;
   nome_completo: string;
@@ -61,6 +69,7 @@ interface ContractData {
   hospede_disney: boolean;
   accepted_at: string | null;
   signature_url: string | null;
+  payment_receipt_url: string | null;
 }
 
 const AceitarContrato = () => {
@@ -74,6 +83,9 @@ const AceitarContrato = () => {
   const [signature, setSignature] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [receiptUploaded, setReceiptUploaded] = useState(false);
+  const [pixCopied, setPixCopied] = useState(false);
 
   useEffect(() => {
     const fetchContract = async () => {
@@ -98,6 +110,9 @@ const AceitarContrato = () => {
       setContract(data);
       if (data.accepted_at) {
         setSubmitted(true);
+        if (data.payment_receipt_url) {
+          setReceiptUploaded(true);
+        }
       }
       setLoading(false);
     };
@@ -209,24 +224,189 @@ const AceitarContrato = () => {
     );
   }
 
+  const handleCopyPix = async () => {
+    try {
+      await navigator.clipboard.writeText(PIX_CNPJ);
+      setPixCopied(true);
+      toast({
+        title: "PIX copiado!",
+        description: "Chave PIX copiada para a área de transferência.",
+      });
+      setTimeout(() => setPixCopied(false), 3000);
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o PIX.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingReceipt(true);
+
+    try {
+      const fileName = `receipts/${contract?.id}_${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("contract-documents")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("contract-documents")
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from("contracts")
+        .update({ payment_receipt_url: urlData.publicUrl })
+        .eq("acceptance_token", token);
+
+      if (updateError) throw updateError;
+
+      setReceiptUploaded(true);
+      toast({
+        title: "Comprovante enviado!",
+        description: "Seu comprovante de pagamento foi recebido com sucesso.",
+      });
+    } catch (err) {
+      console.error("Erro ao enviar comprovante:", err);
+      toast({
+        title: "Erro ao enviar comprovante",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingReceipt(false);
+    }
+  };
+
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Contrato Aceito!</h2>
-            <p className="text-muted-foreground mb-4">
-              Obrigado, {contract?.nome_completo}! Seu contrato foi aceito com sucesso.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Data do aceite: {contract?.accepted_at 
-                ? new Date(contract.accepted_at).toLocaleString("pt-BR")
-                : new Date().toLocaleString("pt-BR")
-              }
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background py-8 px-4">
+        <div className="max-w-lg mx-auto space-y-6">
+          {/* Success Header */}
+          <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
+            <CardContent className="pt-6 text-center">
+              <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Contrato Aceito!</h2>
+              <p className="text-muted-foreground mb-4">
+                Obrigado, {contract?.nome_completo}! Seu contrato foi aceito com sucesso.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Data do aceite: {contract?.accepted_at 
+                  ? new Date(contract.accepted_at).toLocaleString("pt-BR")
+                  : new Date().toLocaleString("pt-BR")
+                }
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* PIX Payment Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <QrCode className="h-5 w-5 text-primary" />
+                Pagamento via PIX
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4 text-center">
+                <p className="text-sm text-muted-foreground mb-2">Chave PIX (CNPJ)</p>
+                <div className="flex items-center justify-center gap-2">
+                  <code className="text-xl font-mono font-bold text-primary">
+                    {PIX_CNPJ}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyPix}
+                    className="gap-2"
+                  >
+                    {pixCopied ? (
+                      <>
+                        <Check className="h-4 w-4 text-green-500" />
+                        Copiado
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copiar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="text-center space-y-1">
+                <p className="font-semibold text-lg">Valor: {contract?.valor}</p>
+                <p className="text-sm text-muted-foreground">
+                  Realize o pagamento e envie o comprovante abaixo
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Receipt Upload Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Enviar Comprovante de Pagamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {receiptUploaded ? (
+                <div className="text-center py-6 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200">
+                  <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                  <p className="font-medium text-green-700 dark:text-green-400">
+                    Comprovante enviado com sucesso!
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Obrigado! Seu pagamento será confirmado em breve.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                    <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <Label 
+                      htmlFor="receipt-upload" 
+                      className="cursor-pointer text-primary hover:underline font-medium"
+                    >
+                      {uploadingReceipt ? "Enviando..." : "Clique para selecionar o comprovante"}
+                    </Label>
+                    <Input
+                      id="receipt-upload"
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleReceiptUpload}
+                      disabled={uploadingReceipt}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Formatos aceitos: imagens ou PDF
+                    </p>
+                  </div>
+
+                  {uploadingReceipt && (
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Enviando comprovante...</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Após a confirmação do pagamento, você receberá as instruções por WhatsApp.
+          </p>
+        </div>
       </div>
     );
   }
