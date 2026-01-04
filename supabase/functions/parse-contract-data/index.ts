@@ -21,7 +21,7 @@ serve(async (req) => {
     const systemPrompt = `Você é um assistente especializado em extrair dados de formulários de reserva de guiamento Disney/Orlando.
 
 O texto segue este formato de template:
-- DADOS PESSOAIS: Nome completo, CPF, E-mail, Telefone, Endereço completo, CEP
+- DADOS PESSOAIS: Nome completo, CPF, E-mail, Telefone, Endereço completo, CEP, Quantidade de pessoas
 - PARQUES E DATAS: Lista de parques onde o cliente preenche a data de visita (formato DD/MM/YYYY ou DD/MM/YY)
 - INFORMAÇÕES ADICIONAIS: Hóspede Disney (Sim/Não), Nome do guia
 
@@ -33,6 +33,7 @@ Extraia e retorne um JSON com:
 - telefone: telefone com DDD (formato (XX) XXXXX-XXXX)
 - cep: CEP (formato XXXXX-XXX)
 - endereco: endereço completo
+- quantidadePessoas: número de pessoas (integer, default 1 se não informado)
 - hospedeDisney: boolean (true se "Sim", false se "Não" ou não informado)
 - nomeGuia: nome do guia se informado
 - parkDates: array de objetos para cada parque COM DATA preenchida. Use estes IDs:

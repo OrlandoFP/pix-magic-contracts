@@ -28,6 +28,7 @@ export type Database = {
           nome_completo: string
           nome_guia: string
           quantidade_dias: number
+          quantidade_pessoas: number | null
           telefone: string
           valor: string
         }
@@ -44,6 +45,7 @@ export type Database = {
           nome_completo: string
           nome_guia: string
           quantidade_dias: number
+          quantidade_pessoas?: number | null
           telefone: string
           valor: string
         }
@@ -60,6 +62,7 @@ export type Database = {
           nome_completo?: string
           nome_guia?: string
           quantidade_dias?: number
+          quantidade_pessoas?: number | null
           telefone?: string
           valor?: string
         }

@@ -29,6 +29,7 @@ DADOS PESSOAIS:
 - Telefone:
 - Endereço completo:
 - CEP:
+- Quantidade de pessoas:
 
 PARQUES E DATAS:
 - Magic Kingdom:
@@ -80,6 +81,7 @@ export function ContractForm() {
     resolver: zodResolver(contractFormSchema),
     defaultValues: {
       hospedeDisney: false,
+      quantidadePessoas: "1",
     },
   });
 
@@ -133,6 +135,7 @@ export function ContractForm() {
         if (parsed.telefone) setValue("telefone", formatPhone(parsed.telefone));
         if (parsed.cep) setValue("cep", formatCEP(parsed.cep));
         if (parsed.endereco) setValue("endereco", parsed.endereco);
+        if (parsed.quantidadePessoas) setValue("quantidadePessoas", String(parsed.quantidadePessoas));
         
         // Parse park dates from AI response
         if (parsed.parkDates && Array.isArray(parsed.parkDates)) {
@@ -206,6 +209,7 @@ export function ContractForm() {
         datas_requeridas: datasRequeridas,
         nome_guia: data.nomeGuia,
         quantidade_dias: parkSelections.length,
+        quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
         valor: data.valor,
         hospede_disney: data.hospedeDisney,
       }]);
@@ -226,6 +230,7 @@ export function ContractForm() {
         datasRequeridas: datasRequeridas,
         nomeGuia: data.nomeGuia,
         quantidadeDias: String(parkSelections.length),
+        quantidadePessoas: data.quantidadePessoas || "1",
         valor: data.valor,
       });
       
@@ -440,7 +445,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
             onChange={setParkSelections}
           />
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="nomeGuia">Nome do Guia *</Label>
               <Select onValueChange={(value) => setValue("nomeGuia", value)}>
@@ -464,6 +469,26 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               </Select>
               {errors.nomeGuia && (
                 <p className="text-sm text-destructive">{errors.nomeGuia.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quantidadePessoas">Qtd. Pessoas *</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                </span>
+                <Input
+                  id="quantidadePessoas"
+                  type="number"
+                  min="1"
+                  placeholder="1"
+                  className="pl-12"
+                  {...register("quantidadePessoas")}
+                />
+              </div>
+              {errors.quantidadePessoas && (
+                <p className="text-sm text-destructive">{errors.quantidadePessoas.message}</p>
               )}
             </div>
 
