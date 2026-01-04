@@ -269,6 +269,28 @@ const AceitarContrato = () => {
 
       if (updateError) throw updateError;
 
+      // Send email notification
+      try {
+        const parkName = contract?.datas_requeridas?.split('\n')?.[0] || "Disney";
+        const visitDate = contract?.datas_requeridas?.split('\n')?.[1] || "Não informada";
+        
+        await supabase.functions.invoke('notify-payment-receipt', {
+          body: {
+            clientName: contract?.nome_completo,
+            clientEmail: contract?.email,
+            contractId: contract?.id,
+            parkName: parkName,
+            visitDate: visitDate,
+            receiptUrl: urlData.publicUrl,
+            notifyEmail: "guiadisney2025@gmail.com" // Email para receber notificações
+          }
+        });
+        console.log("Email notification sent successfully");
+      } catch (emailError) {
+        console.error("Error sending email notification:", emailError);
+        // Don't fail the upload if email fails
+      }
+
       setReceiptUploaded(true);
       toast({
         title: "Comprovante enviado!",
