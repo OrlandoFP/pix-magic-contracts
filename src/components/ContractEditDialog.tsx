@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +35,9 @@ interface Contract {
   datas_requeridas: string;
   nome_guia: string;
   quantidade_dias: number;
+  quantidade_pessoas: number | null;
   valor: string;
+  hospede_disney: boolean;
   created_at: string;
 }
 
@@ -54,7 +57,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     handleSubmit,
     formState: { errors },
     setValue,
-    reset,
+    watch,
   } = useForm<ContractFormData>({
     resolver: zodResolver(contractFormSchema),
     values: contract ? {
@@ -67,6 +70,8 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       nomeGuia: contract.nome_guia,
       valor: contract.valor,
       datasRequeridas: contract.datas_requeridas,
+      quantidadePessoas: String(contract.quantidade_pessoas || 1),
+      hospedeDisney: contract.hospede_disney,
     } : undefined,
   });
 
@@ -103,6 +108,8 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           nome_guia: data.nomeGuia,
           valor: data.valor,
           datas_requeridas: data.datasRequeridas || "",
+          quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
+          hospede_disney: data.hospedeDisney,
         })
         .eq("id", contract.id);
 
@@ -237,6 +244,30 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
               {errors.valor && (
                 <p className="text-sm text-destructive">{errors.valor.message}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-quantidadePessoas">Qtd. Pessoas</Label>
+              <Input
+                id="edit-quantidadePessoas"
+                type="number"
+                min="1"
+                {...register("quantidadePessoas")}
+              />
+              {errors.quantidadePessoas && (
+                <p className="text-sm text-destructive">{errors.quantidadePessoas.message}</p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <Switch
+                id="edit-hospedeDisney"
+                checked={watch("hospedeDisney") ?? false}
+                onCheckedChange={(checked) => setValue("hospedeDisney", checked)}
+              />
+              <Label htmlFor="edit-hospedeDisney" className="cursor-pointer">
+                Hóspede Disney (D-7)
+              </Label>
             </div>
 
             <div className="space-y-2 md:col-span-2">
