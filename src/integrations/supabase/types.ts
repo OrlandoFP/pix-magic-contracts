@@ -27,8 +27,10 @@ export type Database = {
           id: string
           nome_completo: string
           nome_guia: string
+          payment_receipt_url: string | null
           quantidade_dias: number
           quantidade_pessoas: number | null
+          signed_contract_url: string | null
           telefone: string
           valor: string
         }
@@ -44,8 +46,10 @@ export type Database = {
           id?: string
           nome_completo: string
           nome_guia: string
+          payment_receipt_url?: string | null
           quantidade_dias: number
           quantidade_pessoas?: number | null
+          signed_contract_url?: string | null
           telefone: string
           valor: string
         }
@@ -61,8 +65,10 @@ export type Database = {
           id?: string
           nome_completo?: string
           nome_guia?: string
+          payment_receipt_url?: string | null
           quantidade_dias?: number
           quantidade_pessoas?: number | null
+          signed_contract_url?: string | null
           telefone?: string
           valor?: string
         }

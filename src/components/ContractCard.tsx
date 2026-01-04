@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { generateContractPDF } from "@/lib/contract-pdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DocumentUpload } from "@/components/DocumentUpload";
 
 interface Contract {
   id: string;
@@ -25,6 +26,8 @@ interface Contract {
   created_at: string;
   hospede_disney: boolean;
   comprado?: boolean;
+  signed_contract_url?: string | null;
+  payment_receipt_url?: string | null;
 }
 
 interface ContractCardProps {
@@ -37,6 +40,8 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isComprado, setIsComprado] = useState(contract.comprado || false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [signedContractUrl, setSignedContractUrl] = useState(contract.signed_contract_url || null);
+  const [paymentReceiptUrl, setPaymentReceiptUrl] = useState(contract.payment_receipt_url || null);
 
   const createdDate = new Date(contract.created_at);
   const day = format(createdDate, "d");
@@ -276,6 +281,24 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                     <MapPin className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                     <p className="text-sm">{contract.endereco} - CEP: {contract.cep}</p>
                   </div>
+                </div>
+
+                {/* Document uploads */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <DocumentUpload
+                    contractId={contract.id}
+                    label="Contrato Assinado"
+                    currentUrl={signedContractUrl}
+                    fieldName="signed_contract_url"
+                    onUploadComplete={(url) => setSignedContractUrl(url || null)}
+                  />
+                  <DocumentUpload
+                    contractId={contract.id}
+                    label="Comprovante de Pagamento"
+                    currentUrl={paymentReceiptUrl}
+                    fieldName="payment_receipt_url"
+                    onUploadComplete={(url) => setPaymentReceiptUrl(url || null)}
+                  />
                 </div>
               </div>
 
