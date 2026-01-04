@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle, ShoppingCart, Check, Users } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle, ShoppingCart, Check, Users, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { generateContractPDF } from "@/lib/contract-pdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DocumentUpload } from "@/components/DocumentUpload";
+import { ShareContractButton } from "@/components/ShareContractButton";
 
 interface Contract {
   id: string;
@@ -28,6 +29,9 @@ interface Contract {
   comprado?: boolean;
   signed_contract_url?: string | null;
   payment_receipt_url?: string | null;
+  acceptance_token?: string | null;
+  accepted_at?: string | null;
+  signature_url?: string | null;
 }
 
 interface ContractCardProps {
@@ -203,6 +207,12 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
         {/* Status badges and expand button */}
         <div className="flex items-center gap-2">
+          {contract.accepted_at && (
+            <Badge className="bg-blue-600 text-white hidden sm:inline-flex gap-1">
+              <CheckCircle2 className="h-3 w-3" />
+              Aceito
+            </Badge>
+          )}
           {isComprado && (
             <Badge className="bg-green-600 text-white hidden sm:inline-flex gap-1">
               <Check className="h-3 w-3" />
@@ -300,6 +310,29 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                     onUploadComplete={(url) => setPaymentReceiptUrl(url || null)}
                   />
                 </div>
+
+                {/* Acceptance status */}
+                {contract.accepted_at && (
+                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Contrato Aceito Digitalmente</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Data: {new Date(contract.accepted_at).toLocaleString("pt-BR")}
+                    </p>
+                    {contract.signature_url && (
+                      <div className="mt-2">
+                        <p className="text-xs text-muted-foreground mb-1">Assinatura:</p>
+                        <img 
+                          src={contract.signature_url} 
+                          alt="Assinatura do cliente" 
+                          className="h-16 bg-white rounded border"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Action buttons */}
@@ -344,6 +377,12 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                   <Download className="h-4 w-4" />
                   Baixar PDF
                 </Button>
+                <ShareContractButton
+                  contractId={contract.id}
+                  clientName={contract.nome_completo}
+                  clientPhone={contract.telefone}
+                  existingToken={contract.acceptance_token}
+                />
                 <Button
                   variant="outline"
                   className="flex-1 lg:flex-none gap-2 justify-center text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"

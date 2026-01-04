@@ -1,0 +1,361 @@
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { SignaturePad } from "@/components/SignaturePad";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  FileText, 
+  CheckCircle2, 
+  Calendar, 
+  Users, 
+  MapPin, 
+  User,
+  Loader2,
+  AlertCircle
+} from "lucide-react";
+
+interface ContractData {
+  id: string;
+  nome_completo: string;
+  email: string;
+  telefone: string;
+  cpf: string;
+  endereco: string;
+  cep: string;
+  nome_guia: string;
+  quantidade_dias: number;
+  quantidade_pessoas: number | null;
+  datas_requeridas: string;
+  valor: string;
+  hospede_disney: boolean;
+  accepted_at: string | null;
+  signature_url: string | null;
+}
+
+const AceitarContrato = () => {
+  const { token } = useParams<{ token: string }>();
+  const { toast } = useToast();
+  
+  const [contract, setContract] = useState<ContractData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const fetchContract = async () => {
+      if (!token) {
+        setError("Token inválido");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error: fetchError } = await supabase
+        .from("contracts")
+        .select("*")
+        .eq("acceptance_token", token)
+        .single();
+
+      if (fetchError || !data) {
+        setError("Contrato não encontrado ou link expirado");
+        setLoading(false);
+        return;
+      }
+
+      setContract(data);
+      if (data.accepted_at) {
+        setSubmitted(true);
+      }
+      setLoading(false);
+    };
+
+    fetchContract();
+  }, [token]);
+
+  const handleSignatureComplete = (signatureDataUrl: string) => {
+    setSignature(signatureDataUrl);
+    toast({
+      title: "Assinatura capturada",
+      description: "Sua assinatura foi registrada com sucesso.",
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!acceptTerms) {
+      toast({
+        title: "Aceite os termos",
+        description: "Você precisa aceitar os termos do contrato para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Upload signature to storage if provided
+      let signatureUrl = null;
+      if (signature) {
+        const base64Data = signature.split(",")[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "image/png" });
+
+        const fileName = `signatures/${contract?.id}_${Date.now()}.png`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("contract-documents")
+          .upload(fileName, blob);
+
+        if (uploadError) {
+          console.error("Erro ao fazer upload da assinatura:", uploadError);
+        } else {
+          const { data: urlData } = supabase.storage
+            .from("contract-documents")
+            .getPublicUrl(fileName);
+          signatureUrl = urlData.publicUrl;
+        }
+      }
+
+      // Update contract with acceptance
+      const { error: updateError } = await supabase
+        .from("contracts")
+        .update({
+          accepted_at: new Date().toISOString(),
+          signature_url: signatureUrl,
+          client_user_agent: navigator.userAgent,
+        })
+        .eq("acceptance_token", token);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setSubmitted(true);
+      toast({
+        title: "Contrato aceito com sucesso!",
+        description: "Obrigado por confirmar o seu contrato.",
+      });
+    } catch (err) {
+      console.error("Erro ao aceitar contrato:", err);
+      toast({
+        title: "Erro ao aceitar contrato",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando contrato...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Erro</h2>
+            <p className="text-muted-foreground">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center">
+            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Contrato Aceito!</h2>
+            <p className="text-muted-foreground mb-4">
+              Obrigado, {contract?.nome_completo}! Seu contrato foi aceito com sucesso.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Data do aceite: {contract?.accepted_at 
+                ? new Date(contract.accepted_at).toLocaleString("pt-BR")
+                : new Date().toLocaleString("pt-BR")
+              }
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background py-8 px-4">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <FileText className="h-12 w-12 text-primary mx-auto mb-4" />
+          <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-2">
+            Contrato de Guiamento Disney
+          </h1>
+          <p className="text-muted-foreground">
+            Revise os dados e aceite o contrato
+          </p>
+        </div>
+
+        {/* Contract Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Dados do Contratante
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Nome Completo</p>
+                <p className="font-medium">{contract?.nome_completo}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">CPF</p>
+                <p className="font-medium">{contract?.cpf}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{contract?.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Telefone</p>
+                <p className="font-medium">{contract?.telefone}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Endereço</p>
+              <p className="font-medium">{contract?.endereco} - CEP: {contract?.cep}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Detalhes do Guiamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Guia</p>
+                <p className="font-medium">{contract?.nome_guia}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Valor</p>
+                <p className="font-medium text-lg text-primary">{contract?.valor}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Dias</p>
+                  <p className="font-medium">{contract?.quantidade_dias} dia(s)</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Pessoas</p>
+                  <p className="font-medium">{contract?.quantidade_pessoas || "-"}</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Datas dos Parques</p>
+              <p className="font-medium whitespace-pre-line">{contract?.datas_requeridas}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Signature Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Assinatura Digital</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Desenhe sua assinatura no campo abaixo para formalizar o aceite do contrato.
+            </p>
+            <SignaturePad 
+              onSignatureComplete={handleSignatureComplete}
+              disabled={submitting}
+            />
+            {signature && (
+              <p className="text-sm text-green-600 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Assinatura registrada
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Accept Terms */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="terms"
+                checked={acceptTerms}
+                onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                disabled={submitting}
+              />
+              <label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
+                Li e aceito todos os termos do contrato de guiamento. Declaro que as informações 
+                fornecidas são verdadeiras e me comprometo a cumprir as obrigações descritas no 
+                contrato, incluindo pagamento e regras de cancelamento.
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <Button
+          className="w-full h-14 text-lg"
+          onClick={handleSubmit}
+          disabled={!acceptTerms || submitting}
+        >
+          {submitting ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Processando...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              Aceitar Contrato
+            </>
+          )}
+        </Button>
+
+        <p className="text-xs text-center text-muted-foreground">
+          Ao aceitar, você concorda com os termos do contrato e confirma a veracidade das informações.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default AceitarContrato;
