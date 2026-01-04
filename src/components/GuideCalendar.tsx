@@ -4,8 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { format, isValid, subDays, isAfter, isBefore, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { format, isValid, subDays, isAfter, isBefore, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -163,12 +164,15 @@ function calculateMultipassReminders(contracts: Contract[]): MultipassReminder[]
   return reminders.sort((a, b) => a.buyDate.getTime() - b.buyDate.getTime());
 }
 
+type EventFilter = "current-month" | "next-7-days" | "next-30-days" | "all";
+
 export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   const [compradoStatus, setCompradoStatus] = useState<Record<string, boolean>>({});
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedReminder, setSelectedReminder] = useState<MultipassReminder | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [eventFilter, setEventFilter] = useState<EventFilter>("current-month");
 
   const handleEventClick = (contractId: string) => {
     const contract = contracts.find(c => c.id === contractId);
@@ -184,13 +188,35 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
     return scheduledEvents.map((e) => e.date);
   }, [scheduledEvents]);
   
-  const upcomingEvents = useMemo(() => {
+  const filteredEvents = useMemo(() => {
     const now = new Date();
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    now.setHours(0, 0, 0, 0);
     
     return scheduledEvents
-      .filter((e) => e.date >= now && e.date <= thirtyDaysFromNow)
+      .filter((e) => {
+        if (e.date < now) return false;
+        
+        switch (eventFilter) {
+          case "current-month":
+            return isSameMonth(e.date, currentMonth);
+          case "next-7-days":
+            return e.date <= addDays(now, 7);
+          case "next-30-days":
+            return e.date <= addDays(now, 30);
+          case "all":
+            return true;
+          default:
+            return isSameMonth(e.date, currentMonth);
+        }
+      })
       .sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [scheduledEvents, eventFilter, currentMonth]);
+
+  const upcomingEventsCount = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const thirtyDaysFromNow = addDays(now, 30);
+    return scheduledEvents.filter((e) => e.date >= now && e.date <= thirtyDaysFromNow).length;
   }, [scheduledEvents]);
 
   const handleWhatsApp = (telefone: string, clientName: string) => {
@@ -513,43 +539,69 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
       {/* Upcoming Events - Full Width Below */}
       <Card>
         <CardHeader className="pb-2 px-3 sm:px-6">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            Próximos Atendimentos
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              Atendimentos
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {filteredEvents.length}
+              </Badge>
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={eventFilter} onValueChange={(v) => setEventFilter(v as EventFilter)}>
+                <SelectTrigger className="w-[160px] h-8 text-xs sm:text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current-month">
+                    {format(currentMonth, "MMMM", { locale: ptBR })}
+                  </SelectItem>
+                  <SelectItem value="next-7-days">Próximos 7 dias</SelectItem>
+                  <SelectItem value="next-30-days">Próximos 30 dias</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="px-3 sm:px-6">
-          {upcomingEvents.length === 0 ? (
+          {filteredEvents.length === 0 ? (
             <div className="text-center py-6 sm:py-8 text-muted-foreground">
               <CalendarDays className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 sm:mb-3 opacity-40" />
-              <p className="text-sm sm:text-base">Nenhum atendimento agendado</p>
+              <p className="text-sm sm:text-base">Nenhum atendimento para este período</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-              {upcomingEvents.map((event, index) => (
+            <div className="space-y-2">
+              {filteredEvents.map((event, index) => (
                 <button
                   key={`${event.date.toISOString()}-${index}`}
                   onClick={() => handleEventClick(event.contractId)}
-                  className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-muted/50 border hover:bg-muted/80 transition-colors cursor-pointer text-left"
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/30 border hover:bg-muted/60 transition-colors cursor-pointer text-left"
                 >
-                  <div className="flex flex-col items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-md bg-primary text-primary-foreground text-xs sm:text-sm font-bold flex-shrink-0">
-                    <span className="text-[10px] sm:text-xs uppercase">
+                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary text-primary-foreground text-sm font-bold flex-shrink-0">
+                    <span className="text-[10px] uppercase leading-tight">
                       {format(event.date, "MMM", { locale: ptBR })}
                     </span>
-                    <span className="text-sm sm:text-lg leading-none">
+                    <span className="text-lg leading-none">
                       {format(event.date, "dd")}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <p className="font-medium truncate text-sm sm:text-base">{event.clientName}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{event.clientName}</p>
                       {event.hospedeDisney && (
-                        <Castle className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500 flex-shrink-0" />
+                        <Castle className="h-4 w-4 text-amber-500 flex-shrink-0" />
                       )}
                     </div>
-                    <Badge variant="secondary" className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs">
-                      {event.park}
-                    </Badge>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {event.park}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {format(event.date, "EEEE", { locale: ptBR })}
+                      </span>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -570,7 +622,7 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
         </Card>
         <Card className="p-3 sm:p-4">
           <p className="text-xs sm:text-sm text-muted-foreground">Próximos 30 dias</p>
-          <p className="text-xl sm:text-2xl font-bold text-primary">{upcomingEvents.length}</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{upcomingEventsCount}</p>
         </Card>
         <Card className="p-3 sm:p-4">
           <p className="text-xs sm:text-sm text-muted-foreground">Clientes Únicos</p>
