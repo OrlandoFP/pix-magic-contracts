@@ -16,7 +16,11 @@ export type Database = {
     Tables: {
       contracts: {
         Row: {
+          acceptance_token: string | null
+          accepted_at: string | null
           cep: string
+          client_ip: string | null
+          client_user_agent: string | null
           comprado: boolean
           cpf: string
           created_at: string
@@ -30,12 +34,17 @@ export type Database = {
           payment_receipt_url: string | null
           quantidade_dias: number
           quantidade_pessoas: number | null
+          signature_url: string | null
           signed_contract_url: string | null
           telefone: string
           valor: string
         }
         Insert: {
+          acceptance_token?: string | null
+          accepted_at?: string | null
           cep: string
+          client_ip?: string | null
+          client_user_agent?: string | null
           comprado?: boolean
           cpf: string
           created_at?: string
@@ -49,12 +58,17 @@ export type Database = {
           payment_receipt_url?: string | null
           quantidade_dias: number
           quantidade_pessoas?: number | null
+          signature_url?: string | null
           signed_contract_url?: string | null
           telefone: string
           valor: string
         }
         Update: {
+          acceptance_token?: string | null
+          accepted_at?: string | null
           cep?: string
+          client_ip?: string | null
+          client_user_agent?: string | null
           comprado?: boolean
           cpf?: string
           created_at?: string
@@ -68,6 +82,7 @@ export type Database = {
           payment_receipt_url?: string | null
           quantidade_dias?: number
           quantidade_pessoas?: number | null
+          signature_url?: string | null
           signed_contract_url?: string | null
           telefone?: string
           valor?: string

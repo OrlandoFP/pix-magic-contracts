@@ -28,6 +28,9 @@ interface Contract {
   hospede_disney: boolean;
   signed_contract_url?: string | null;
   payment_receipt_url?: string | null;
+  acceptance_token?: string | null;
+  accepted_at?: string | null;
+  signature_url?: string | null;
 }
 
 const Contratos = () => {
