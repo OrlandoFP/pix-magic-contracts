@@ -95,16 +95,52 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
   // Parse park entries with dates from datas_requeridas
   const parseParkEntries = (datas: string) => {
-    const lines = datas.split('\n').filter(line => line.trim());
     const entries: { date: string; park: string }[] = [];
     
+    // Split by newline or comma for multiple entries
+    const lines = datas.split(/[\n,]/).filter(line => line.trim());
+    
     lines.forEach(line => {
-      const dateMatch = line.match(/(\d{2})\/(\d{2})(?:\/\d{4})?/);
-      if (dateMatch) {
-        const dayMonth = `${dateMatch[1]}/${dateMatch[2]}`;
-        const park = line.replace(/\d{2}\/\d{2}(\/\d{4})?/g, '').replace(/[-–:]/g, '').trim();
-        entries.push({ date: dayMonth, park: park || 'Passeio' });
+      const trimmed = line.trim();
+      
+      // Format 1: "DD/MM - Park Name" or "DD/MM/YYYY - Park Name"
+      const format1 = trimmed.match(/^(\d{2})\/(\d{2})(?:\/\d{4})?\s*[-–:]\s*(.+)$/);
+      if (format1) {
+        entries.push({ 
+          date: `${format1[1]}/${format1[2]}`, 
+          park: format1[3].trim() 
+        });
+        return;
       }
+      
+      // Format 2: "Park Name (DD/MM)" or "Park Name (DD/MM/YYYY)"
+      const format2 = trimmed.match(/^(.+?)\s*\((\d{2})\/(\d{2})(?:\/\d{4})?\)$/);
+      if (format2) {
+        const parkName = format2[1].trim();
+        // Skip if park name says "A definir" or similar
+        if (!parkName.toLowerCase().includes('a definir')) {
+          entries.push({ 
+            date: `${format2[2]}/${format2[3]}`, 
+            park: parkName 
+          });
+        }
+        return;
+      }
+      
+      // Format 3: Just park name without date (skip or mark as undefined)
+      const format3 = trimmed.match(/^(.+?)\s*\(([^)]+)\)$/);
+      if (format3 && format3[2].toLowerCase().includes('definir')) {
+        // Park with "A definir" - skip
+        return;
+      }
+    });
+    
+    // Sort entries by date
+    entries.sort((a, b) => {
+      const [dayA, monthA] = a.date.split('/').map(Number);
+      const [dayB, monthB] = b.date.split('/').map(Number);
+      if (monthA !== monthB) return monthA - monthB;
+      return dayA - dayB;
     });
     
     return entries;
