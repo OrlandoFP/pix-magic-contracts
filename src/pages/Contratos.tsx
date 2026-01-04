@@ -22,9 +22,10 @@ interface Contract {
   datas_requeridas: string;
   nome_guia: string;
   quantidade_dias: number;
+  quantidade_pessoas: number | null;
   valor: string;
   created_at: string;
-  hospede_disney?: boolean;
+  hospede_disney: boolean;
 }
 
 const Contratos = () => {
