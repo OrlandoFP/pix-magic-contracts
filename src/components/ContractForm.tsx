@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle } from "lucide-react";
+import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,55 @@ import {
 } from "@/lib/contract-validation";
 import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
 
+const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
+
+DADOS PESSOAIS:
+- Nome completo:
+- CPF:
+- E-mail:
+- Telefone:
+- Endereço completo:
+- CEP:
+
+PARQUES E DATAS:
+- Magic Kingdom:
+- EPCOT:
+- Hollywood Studios:
+- Animal Kingdom:
+- Universal Studios:
+- Islands of Adventure:
+- Epic Universe:
+
+INFORMAÇÕES ADICIONAIS:
+- Hóspede Disney? (Sim/Não):
+- Nome do guia:`;
+
 export function ContractForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [rawData, setRawData] = useState("");
   const [parkSelections, setParkSelections] = useState<ParkSelection[]>([]);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+
+  const handleCopyTemplate = async () => {
+    try {
+      await navigator.clipboard.writeText(TEMPLATE_TEXT);
+      setCopied(true);
+      toast({
+        title: "Template copiado!",
+        description: "Envie para o cliente preencher.",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Tente selecionar e copiar manualmente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const {
     register,
@@ -208,14 +250,35 @@ export function ContractForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* AI Auto-Fill Section */}
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-white" />
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="font-display text-xl font-semibold text-foreground">Preenchimento Automático</h2>
+              <p className="text-sm text-muted-foreground">Cole os dados brutos do cliente</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-display text-xl font-semibold text-foreground">Preenchimento Automático</h2>
-            <p className="text-sm text-muted-foreground">Cole os dados brutos do cliente</p>
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCopyTemplate}
+            className="gap-2"
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4 text-green-500" />
+                Copiado!
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                Copiar Template
+              </>
+            )}
+          </Button>
         </div>
 
         <div className="relative">
