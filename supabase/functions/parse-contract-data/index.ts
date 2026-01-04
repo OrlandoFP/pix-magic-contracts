@@ -43,9 +43,6 @@ Extraia e retorne um JSON com:
   - "epic-universe" para Epic Universe
   - "universal-studios" para Universal Studios
   - "islands-adventure" para Islands of Adventure
-  - "seaworld" para SeaWorld
-  - "busch-gardens" para Busch Gardens
-  
   IMPORTANTE: Converta datas de DD/MM/YYYY para formato ISO YYYY-MM-DD
   Exemplo: "15/01/2025" → "2025-01-15"
   
