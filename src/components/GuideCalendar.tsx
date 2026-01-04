@@ -455,46 +455,25 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                             {format(day, "d")}
                           </div>
                           {hasEvents && (
-                            <div className="space-y-0.5 sm:space-y-1">
-                              {/* Mobile: show badges/dots, Desktop: show details */}
-                              <div className="hidden sm:block">
-                                {dayEvents.slice(0, 2).map((event, idx) => (
-                                  <button
-                                    key={idx}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEventClick(event.contractId);
-                                    }}
-                                    className={`w-full text-left rounded px-1 py-0.5 text-[10px] leading-tight truncate hover:opacity-80 transition-opacity cursor-pointer mb-0.5 ${
-                                      event.hospedeDisney 
-                                        ? "bg-amber-400 text-amber-900" 
-                                        : "bg-primary text-primary-foreground"
-                                    }`}
-                                    title={`${event.clientName} - ${event.park}`}
-                                  >
-                                    <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
-                                  </button>
-                                ))}
-                                {dayEvents.length > 2 && (
-                                  <span className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</span>
-                                )}
-                              </div>
-                              {/* Mobile: colored dots */}
-                              <div className="flex flex-wrap gap-0.5 sm:hidden">
-                                {dayEvents.slice(0, 3).map((event, idx) => (
-                                  <div
-                                    key={idx}
-                                    className={`w-2 h-2 rounded-full ${
-                                      event.hospedeDisney 
-                                        ? "bg-amber-400" 
-                                        : "bg-primary"
-                                    }`}
-                                  />
-                                ))}
-                                {dayEvents.length > 3 && (
-                                  <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 3}</span>
-                                )}
-                              </div>
+                            <div className="space-y-0.5">
+                              {dayEvents.map((event, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEventClick(event.contractId);
+                                  }}
+                                  className={`w-full text-left rounded px-0.5 sm:px-1 py-0.5 text-[8px] sm:text-[10px] leading-tight hover:opacity-80 transition-opacity cursor-pointer ${
+                                    event.hospedeDisney 
+                                      ? "bg-amber-400 text-amber-900" 
+                                      : "bg-primary text-primary-foreground"
+                                  }`}
+                                  title={`${event.clientName} - ${event.park}`}
+                                >
+                                  <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
+                                  <span className="truncate block opacity-80 text-[7px] sm:text-[9px]">{event.park}</span>
+                                </button>
+                              ))}
                             </div>
                           )}
                         </div>
