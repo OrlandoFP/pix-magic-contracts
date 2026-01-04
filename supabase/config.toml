@@ -1,1 +1,7 @@
 project_id = "rdgxxwdpdsqojjquftan"
+
+[functions.parse-contract-data]
+verify_jwt = false
+
+[functions.notify-payment-receipt]
+verify_jwt = false
