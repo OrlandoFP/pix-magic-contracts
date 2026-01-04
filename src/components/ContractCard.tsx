@@ -207,6 +207,12 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
         {/* Status badges and expand button */}
         <div className="flex items-center gap-2">
+          {paymentReceiptUrl && (
+            <Badge className="bg-emerald-600 text-white hidden sm:inline-flex gap-1">
+              <Check className="h-3 w-3" />
+              Pago
+            </Badge>
+          )}
           {contract.accepted_at && (
             <Badge className="bg-blue-600 text-white hidden sm:inline-flex gap-1">
               <CheckCircle2 className="h-3 w-3" />
