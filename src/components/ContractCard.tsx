@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle, ShoppingCart, Check } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle, ShoppingCart, Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,9 +20,10 @@ interface Contract {
   datas_requeridas: string;
   nome_guia: string;
   quantidade_dias: number;
+  quantidade_pessoas: number | null;
   valor: string;
   created_at: string;
-  hospede_disney?: boolean;
+  hospede_disney: boolean;
   comprado?: boolean;
 }
 
@@ -114,14 +115,8 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
   // Check if first Disney park exists in the schedule
   const hasFirstDisneyPark = parkEntries.some(entry => isDisneyPark(entry.park));
   
-  // Determine D-7 or D-3 based on first park date being Disney
-  const getDeadlineType = () => {
-    if (parkEntries.length === 0) return 'D-3';
-    const firstPark = parkEntries[0];
-    return isDisneyPark(firstPark.park) ? 'D-7' : 'D-3';
-  };
-  
-  const deadlineType = getDeadlineType();
+  // Determine D-7 or D-3 based on hospede_disney flag
+  const deadlineType = contract.hospede_disney ? 'D-7' : 'D-3';
   
   // Get travel period (first and last date)
   const getTravelPeriod = () => {
@@ -154,8 +149,14 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
               <Castle className="h-4 w-4 text-blue-500 flex-shrink-0" />
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            {contract.nome_guia.toUpperCase()} • {contract.quantidade_dias} PAX • R$ {contract.valor}
+          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
+            <span>{contract.nome_guia.toUpperCase()}</span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3" />
+              {contract.quantidade_pessoas || 1} pessoas
+            </span>
+            <span>•</span>
+            <span>R$ {contract.valor}</span>
           </p>
         </div>
 
