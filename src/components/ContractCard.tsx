@@ -104,38 +104,38 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
       const trimmed = line.trim();
       
       // Format 1: "DD/MM - Park Name" or "DD/MM/YYYY - Park Name"
-      const format1 = trimmed.match(/^(\d{2})\/(\d{2})(?:\/\d{4})?\s*[-–:]\s*(.+)$/);
+      const format1 = trimmed.match(/^(\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?\s*[-–:]\s*(.+)$/);
       if (format1) {
+        const day = format1[1].padStart(2, '0');
+        const month = format1[2].padStart(2, '0');
         entries.push({ 
-          date: `${format1[1]}/${format1[2]}`, 
+          date: `${day}/${month}`, 
           park: format1[3].trim() 
         });
         return;
       }
       
-      // Format 2: "Park Name (DD/MM)" or "Park Name (DD/MM/YYYY)"
-      const format2 = trimmed.match(/^(.+?)\s*\((\d{2})\/(\d{2})(?:\/\d{4})?\)$/);
+      // Format 2: "Park Name (DD/MM/YYYY)" or "Park Name (DD/MM)"
+      const format2 = trimmed.match(/^(.+?)\s*\((\d{1,2})\/(\d{1,2})(?:\/\d{2,4})?\)$/);
       if (format2) {
         const parkName = format2[1].trim();
         // Skip if park name says "A definir" or similar
         if (!parkName.toLowerCase().includes('a definir')) {
+          const day = format2[2].padStart(2, '0');
+          const month = format2[3].padStart(2, '0');
           entries.push({ 
-            date: `${format2[2]}/${format2[3]}`, 
+            date: `${day}/${month}`, 
             park: parkName 
           });
         }
         return;
       }
       
-      // Format 3: Just park name without date (skip or mark as undefined)
-      const format3 = trimmed.match(/^(.+?)\s*\(([^)]+)\)$/);
-      if (format3 && format3[2].toLowerCase().includes('definir')) {
-        // Park with "A definir" - skip
-        return;
-      }
+      // Format 3: Just park name with text in parentheses (like "A definir") - skip
+      // This catches cases like "Magic Kingdom (A definir)"
     });
     
-    // Sort entries by date
+    // Sort entries by date (handling month/year wrap-around)
     entries.sort((a, b) => {
       const [dayA, monthA] = a.date.split('/').map(Number);
       const [dayB, monthB] = b.date.split('/').map(Number);
