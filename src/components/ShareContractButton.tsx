@@ -48,7 +48,9 @@ export const ShareContractButton = ({
     return `${baseUrl}/aceitar/${token}`;
   };
 
-  const handleGenerateLink = async () => {
+  const handleGenerateLink = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setLoading(true);
     try {
       const newToken = generateToken();
@@ -77,7 +79,9 @@ export const ShareContractButton = ({
     }
   };
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const link = getAcceptanceLink();
     await navigator.clipboard.writeText(link);
     setCopied(true);
@@ -88,7 +92,9 @@ export const ShareContractButton = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareViaWhatsApp = () => {
+  const shareViaWhatsApp = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     const link = getAcceptanceLink();
     const message = encodeURIComponent(
       `Olá ${clientName}! 👋\n\n` +
@@ -125,7 +131,7 @@ export const ShareContractButton = ({
         <div className="space-y-4 py-4">
           {!token ? (
             <Button 
-              onClick={handleGenerateLink} 
+              onClick={(e) => handleGenerateLink(e)}
               className="w-full"
               disabled={loading}
             >
@@ -154,7 +160,7 @@ export const ShareContractButton = ({
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={copyToClipboard}
+                    onClick={(e) => copyToClipboard(e)}
                   >
                     {copied ? (
                       <Check className="h-4 w-4 text-green-500" />
@@ -167,7 +173,7 @@ export const ShareContractButton = ({
 
               <div className="flex flex-col gap-3">
                 <Button
-                  onClick={shareViaWhatsApp}
+                  onClick={(e) => shareViaWhatsApp(e)}
                   className="w-full bg-green-600 hover:bg-green-700"
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
@@ -176,7 +182,7 @@ export const ShareContractButton = ({
 
                 <Button
                   variant="outline"
-                  onClick={handleGenerateLink}
+                  onClick={(e) => handleGenerateLink(e)}
                   disabled={loading}
                   className="w-full"
                 >
