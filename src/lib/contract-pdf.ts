@@ -13,6 +13,8 @@ interface ContractData {
   valor: string;
   quantidadePessoas?: string;
   datas?: string;
+  observacao?: string;
+  customTerms?: string;
 }
 
 const CONTRACT_TERMS = `Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.
@@ -248,7 +250,7 @@ function renderPage1(
   }
 
   // Section 4 - Observações (quebra automática de página quando necessário)
-  const obsText =
+  const obsText = data.observacao || 
     "Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.";
 
   doc.setFont("helvetica", "italic");
@@ -355,7 +357,8 @@ function renderPage2(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...BLACK);
 
-  const lines = doc.splitTextToSize(CONTRACT_TERMS, contentWidth);
+  const termsToUse = data.customTerms || CONTRACT_TERMS;
+  const lines = doc.splitTextToSize(termsToUse, contentWidth);
   lines.forEach((line: string) => {
     if (y > pageHeight - 100) {
       doc.addPage();

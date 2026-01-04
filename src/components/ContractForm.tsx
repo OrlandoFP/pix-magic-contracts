@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, Download, Mail, User, MapPin, Phone, Calendar, Users, DollarSign, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check } from "lucide-react";
+import { FileText, Mail, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
   formatPhone,
 } from "@/lib/contract-validation";
 import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
-
+import { ContractGuidelinesDialog } from "./ContractGuidelinesDialog";
 const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
 
 DADOS PESSOAIS:
@@ -51,6 +51,8 @@ export function ContractForm() {
   const [rawData, setRawData] = useState("");
   const [parkSelections, setParkSelections] = useState<ParkSelection[]>([]);
   const [copied, setCopied] = useState(false);
+  const [observacao, setObservacao] = useState("");
+  const [customTerms, setCustomTerms] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -232,6 +234,8 @@ export function ContractForm() {
         quantidadeDias: String(parkSelections.length),
         quantidadePessoas: data.quantidadePessoas || "1",
         valor: data.valor,
+        observacao: observacao || undefined,
+        customTerms: customTerms,
       });
       
       setIsGenerated(true);
@@ -535,6 +539,29 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                 onCheckedChange={(checked) => setValue("hospedeDisney", checked)}
               />
             </div>
+          </div>
+
+          {/* Observação Field */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="observacao">Observação</Label>
+            </div>
+            <Textarea
+              id="observacao"
+              placeholder="Adicione observações ou solicitações específicas do cliente que serão incluídas no contrato..."
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+              className="min-h-[100px] resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              Esta observação será exibida na seção 4 do contrato.
+            </p>
+          </div>
+
+          {/* Contract Guidelines Button */}
+          <div className="flex items-center justify-between pt-2">
+            <ContractGuidelinesDialog onTermsChange={setCustomTerms} />
           </div>
         </div>
       </div>
