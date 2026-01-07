@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon } from "lucide-react";
+import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -82,6 +82,7 @@ export function ContractForm() {
     formState: { errors },
     setValue,
     watch,
+    reset,
   } = useForm<ContractFormData>({
     resolver: zodResolver(contractFormSchema),
     defaultValues: {
@@ -89,6 +90,18 @@ export function ContractForm() {
       quantidadePessoas: "1",
     },
   });
+
+  const handleNewContract = () => {
+    reset();
+    setParkSelections([]);
+    setRawData("");
+    setObservacao("");
+    setCustomTerms(undefined);
+    setIsGenerated(false);
+    setSavedContractId(null);
+    setAcceptanceToken(null);
+    setLinkCopied(false);
+  };
 
   const hospedeDisney = watch("hospedeDisney");
 
@@ -679,6 +692,18 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
             O cliente poderá visualizar os dados do contrato, desenhar sua assinatura 
             e confirmar o aceite diretamente pelo link.
           </p>
+
+          <div className="pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleNewContract}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Gerar Novo Contrato
+            </Button>
+          </div>
         </div>
       )}
     </form>
