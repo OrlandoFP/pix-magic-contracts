@@ -32,8 +32,8 @@ const Index = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="animate-slide-up font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-[1.1] tracking-tight">
-              Contratos de Guiamento
-              <span className="block text-gradient-gold mt-1">Disney</span>
+              Gerador de Contrato
+              <span className="block text-gradient-gold mt-1">Orlando Fast Pass</span>
             </h2>
             
             <p className="animate-slide-up text-base md:text-lg text-primary-foreground/70 max-w-xl mx-auto leading-relaxed" style={{ animationDelay: '0.1s' }}>
