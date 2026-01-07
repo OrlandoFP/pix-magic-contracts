@@ -184,8 +184,10 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
               : "border-border hover:border-muted-foreground/30"
           )}
           onClick={(e) => {
-            // Avoid double-toggle when clicking directly on the checkbox
-            if ((e.target as HTMLElement).closest('button[role="checkbox"]')) return;
+            // Avoid double-toggle when clicking on the checkbox OR its label
+            const target = e.target as HTMLElement;
+            if (target.closest('button[role="checkbox"]')) return;
+            if (target.closest('label[for="dates-later"]')) return;
             onDatesLaterChange(!datesLater);
           }}
         >
