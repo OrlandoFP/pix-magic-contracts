@@ -64,6 +64,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
       nomeGuia: contract.nome_guia,
       quantidadeDias: contract.quantidade_dias.toString(),
       valor: contract.valor,
+      quantidadePessoas: String(contract.quantidade_pessoas || 1),
     });
     pdf.save(`contrato-${contract.nome_completo.replace(/\s+/g, '-').toLowerCase()}.pdf`);
   };
