@@ -44,6 +44,13 @@ INFORMAÇÕES ADICIONAIS:
 - Hóspede Disney? (Sim/Não):
 - Nome do guia:`;
 
+const parseISODateOnlyToLocal = (iso: string): Date => {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return new Date(iso);
+  const [, y, mo, d] = m;
+  return new Date(Number(y), Number(mo) - 1, Number(d));
+};
+
 export function ContractForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
@@ -161,16 +168,18 @@ export function ContractForm() {
         if (parsed.parkDates && Array.isArray(parsed.parkDates)) {
           const newSelections: ParkSelection[] = [];
           parsed.parkDates.forEach((pd: { parkId: string; date: string }) => {
-            const park = PARKS.find(p => p.id === pd.parkId);
+            const park = PARKS.find((p) => p.id === pd.parkId);
             if (park && pd.date) {
               newSelections.push({
                 parkId: pd.parkId,
                 parkName: park.name,
-                date: new Date(pd.date),
+                // IMPORTANT: avoid timezone shift when parsing YYYY-MM-DD
+                date: parseISODateOnlyToLocal(pd.date),
               });
             }
           });
           if (newSelections.length > 0) {
+            setDatesLater(false);
             setParkSelections(newSelections);
           }
         }

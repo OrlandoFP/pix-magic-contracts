@@ -11,9 +11,26 @@ serve(async (req) => {
   }
 
   try {
-    const { rawText } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const rawText = typeof body?.rawText === "string" ? body.rawText.trim() : "";
+
+    if (!rawText) {
+      return new Response(JSON.stringify({ error: "rawText inválido" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Basic safety limit to avoid abuse / oversized prompts
+    if (rawText.length > 10000) {
+      return new Response(JSON.stringify({ error: "Texto muito longo para processar" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
+
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
@@ -161,7 +178,6 @@ IGNORE parques sem data preenchida.`;
     }
 
     const data = await response.json();
-    console.log("AI response:", JSON.stringify(data, null, 2));
     
     // Extract data from tool call
     let parsedData;
@@ -169,7 +185,6 @@ IGNORE parques sem data preenchida.`;
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
       if (toolCall && toolCall.function?.arguments) {
         parsedData = JSON.parse(toolCall.function.arguments);
-        console.log("Parsed data from tool call:", JSON.stringify(parsedData, null, 2));
       } else {
         // Fallback: try to parse from content
         const content = data.choices?.[0]?.message?.content || "";
@@ -181,7 +196,7 @@ IGNORE parques sem data preenchida.`;
         }
       }
     } catch (parseError) {
-      console.error("Error parsing AI response:", parseError, data);
+      console.error("Error parsing AI response:", parseError);
       return new Response(JSON.stringify({ error: "Erro ao interpretar resposta da IA" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
