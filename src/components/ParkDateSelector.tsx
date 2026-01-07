@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Clock, CalendarClock } from "lucide-react";
@@ -45,6 +45,12 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
     return initial;
   });
 
+  // Create a stable key for value comparison
+  const valueKey = useMemo(() => 
+    value.map(v => `${v.parkId}-${v.date?.getTime() ?? 'null'}`).join(','),
+    [value]
+  );
+
   // Sync with external value changes (e.g., from AI parsing)
   useEffect(() => {
     const newState: Record<string, Date | null> = {};
@@ -52,7 +58,7 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
       newState[selection.parkId] = selection.date;
     });
     setSelectedParks(newState);
-  }, [value.map(v => `${v.parkId}-${v.date?.getTime()}`).join(',')]);
+  }, [valueKey]);
 
   const handleParkToggle = (parkId: string, parkName: string, checked: boolean) => {
     const updated = { ...selectedParks };
