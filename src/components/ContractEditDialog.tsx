@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { parse } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Loader2, Save } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -23,6 +24,7 @@ import {
   formatCEP,
   formatPhone,
 } from "@/lib/contract-validation";
+import { ParkDateSelector, PARKS, formatParkSelections, type ParkSelection } from "@/components/ParkDateSelector";
 
 interface Contract {
   id: string;
@@ -48,9 +50,52 @@ interface ContractEditDialogProps {
   onSuccess?: () => void;
 }
 
+// Helper to parse "dd/MM - ParkName" or "dd/MM/yyyy - ParkName" lines
+function parseDatasRequeridas(text: string): ParkSelection[] {
+  if (!text || text === "Datas a definir") return [];
+  const lines = text.split("\n").filter(Boolean);
+  const selections: ParkSelection[] = [];
+  const currentYear = new Date().getFullYear();
+
+  lines.forEach((line) => {
+    // Match "dd/MM - ParkName" or "dd/MM/yyyy - ParkName"
+    const match = line.match(/^(\d{2}\/\d{2}(?:\/\d{4})?)\s*-\s*(.+)$/);
+    if (match) {
+      const [, dateStr, parkName] = match;
+      const park = PARKS.find((p) => p.name.toLowerCase() === parkName.trim().toLowerCase());
+      if (park) {
+        // Parse date - add current year if missing
+        const fullDateStr = dateStr.includes("/") && dateStr.split("/").length === 2
+          ? `${dateStr}/${currentYear}`
+          : dateStr;
+        const parsed = parse(fullDateStr, "dd/MM/yyyy", new Date(), { locale: ptBR });
+        if (!isNaN(parsed.getTime())) {
+          selections.push({ parkId: park.id, parkName: park.name, date: parsed });
+        }
+      }
+    }
+  });
+  return selections;
+}
+
 export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: ContractEditDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [parkSelections, setParkSelections] = useState<ParkSelection[]>([]);
+  const [datesLater, setDatesLater] = useState(false);
   const { toast } = useToast();
+
+  // Parse datas_requeridas when contract changes
+  useEffect(() => {
+    if (contract) {
+      if (contract.datas_requeridas === "Datas a definir") {
+        setDatesLater(true);
+        setParkSelections([]);
+      } else {
+        setDatesLater(false);
+        setParkSelections(parseDatasRequeridas(contract.datas_requeridas));
+      }
+    }
+  }, [contract]);
 
   const {
     register,
@@ -96,6 +141,9 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     setIsSaving(true);
     
     try {
+      // Build datas_requeridas from park selections
+      const datasRequeridas = formatParkSelections(parkSelections, datesLater);
+      
       const { error } = await supabase
         .from("contracts")
         .update({
@@ -107,7 +155,8 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           telefone: data.telefone,
           nome_guia: data.nomeGuia,
           valor: data.valor,
-          datas_requeridas: data.datasRequeridas || "",
+          datas_requeridas: datasRequeridas,
+          quantidade_dias: parkSelections.length || 1,
           quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
           hospede_disney: data.hospedeDisney,
         })
@@ -270,13 +319,12 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
               </Label>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="edit-datasRequeridas">Datas Requeridas</Label>
-              <Textarea
-                id="edit-datasRequeridas"
-                {...register("datasRequeridas")}
-                placeholder="Ex: 06/01 - Magic Kingdom, 07/01 - Animal Kingdom"
-                className="min-h-[80px]"
+            <div className="md:col-span-2">
+              <ParkDateSelector
+                value={parkSelections}
+                onChange={setParkSelections}
+                datesLater={datesLater}
+                onDatesLaterChange={setDatesLater}
               />
             </div>
           </div>
