@@ -183,7 +183,7 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
               ? "border-blue-500/50 bg-blue-500/10" 
               : "border-border hover:border-muted-foreground/30"
           )}
-          onClick={() => onDatesLaterChange(!datesLater)}
+          onClick={() => onDatesLaterChange?.(!datesLater)}
         >
           <div className="flex items-center gap-3">
             <Checkbox
