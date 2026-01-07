@@ -50,6 +50,7 @@ export function ContractForm() {
   const [isParsing, setIsParsing] = useState(false);
   const [rawData, setRawData] = useState("");
   const [parkSelections, setParkSelections] = useState<ParkSelection[]>([]);
+  const [datesLater, setDatesLater] = useState(false);
   const [copied, setCopied] = useState(false);
   const [observacao, setObservacao] = useState("");
   const [customTerms, setCustomTerms] = useState<string | undefined>(undefined);
@@ -101,6 +102,7 @@ export function ContractForm() {
     setSavedContractId(null);
     setAcceptanceToken(null);
     setLinkCopied(false);
+    setDatesLater(false);
   };
 
   const hospedeDisney = watch("hospedeDisney");
@@ -191,29 +193,32 @@ export function ContractForm() {
   };
 
   const onSubmit = async (data: ContractFormData) => {
-    // Validate park selections
-    if (parkSelections.length === 0) {
-      toast({
-        title: "Selecione os parques",
-        description: "Selecione pelo menos um parque e sua data.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Validate park selections (only if not "dates later" mode)
+    if (!datesLater) {
+      if (parkSelections.length === 0) {
+        toast({
+          title: "Selecione os parques",
+          description: "Selecione pelo menos um parque ou marque 'Definir datas depois'.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const hasAllDates = parkSelections.every((s) => s.date);
-    if (!hasAllDates) {
-      toast({
-        title: "Datas incompletas",
-        description: "Selecione a data para todos os parques selecionados.",
-        variant: "destructive",
-      });
-      return;
+      const hasAllDates = parkSelections.every((s) => s.date);
+      if (!hasAllDates) {
+        toast({
+          title: "Datas incompletas",
+          description: "Selecione a data para todos os parques selecionados.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsGenerating(true);
     
-    const datasRequeridas = formatParkSelections(parkSelections);
+    const datasRequeridas = formatParkSelections(parkSelections, datesLater);
+    const quantidadeDias = datesLater ? 0 : parkSelections.length;
     
     try {
       // Generate acceptance token
@@ -229,7 +234,7 @@ export function ContractForm() {
         telefone: data.telefone,
         datas_requeridas: datasRequeridas,
         nome_guia: data.nomeGuia,
-        quantidade_dias: parkSelections.length,
+        quantidade_dias: quantidadeDias,
         quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
         valor: data.valor,
         hospede_disney: data.hospedeDisney,
@@ -255,7 +260,7 @@ export function ContractForm() {
         telefone: data.telefone,
         datasRequeridas: datasRequeridas,
         nomeGuia: data.nomeGuia,
-        quantidadeDias: String(parkSelections.length),
+        quantidadeDias: String(quantidadeDias),
         quantidadePessoas: data.quantidadePessoas || "1",
         valor: data.valor,
         observacao: observacao || undefined,
@@ -471,6 +476,8 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
           <ParkDateSelector
             value={parkSelections}
             onChange={setParkSelections}
+            datesLater={datesLater}
+            onDatesLaterChange={setDatesLater}
           />
 
           <div className="grid gap-6 md:grid-cols-3">
