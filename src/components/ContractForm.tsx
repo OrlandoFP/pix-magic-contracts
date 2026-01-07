@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, Mail, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare } from "lucide-react";
+import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,9 @@ export function ContractForm() {
   const [copied, setCopied] = useState(false);
   const [observacao, setObservacao] = useState("");
   const [customTerms, setCustomTerms] = useState<string | undefined>(undefined);
+  const [savedContractId, setSavedContractId] = useState<string | null>(null);
+  const [acceptanceToken, setAcceptanceToken] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -200,8 +203,11 @@ export function ContractForm() {
     const datasRequeridas = formatParkSelections(parkSelections);
     
     try {
-      // Save contract to database
-      const { error: dbError } = await supabase.from("contracts").insert([{
+      // Generate acceptance token
+      const newToken = crypto.randomUUID().replace(/-/g, "").substring(0, 24);
+      
+      // Save contract to database with token
+      const { data: insertedData, error: dbError } = await supabase.from("contracts").insert([{
         nome_completo: data.nomeCompleto,
         cpf: data.cpf,
         endereco: data.endereco,
@@ -214,12 +220,17 @@ export function ContractForm() {
         quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
         valor: data.valor,
         hospede_disney: data.hospedeDisney,
-      }]);
+        acceptance_token: newToken,
+      }]).select("id").single();
 
       if (dbError) {
         console.error("Error saving contract:", dbError);
         throw new Error("Erro ao salvar contrato no banco de dados");
       }
+      
+      // Store contract ID and token for sharing
+      setSavedContractId(insertedData.id);
+      setAcceptanceToken(newToken);
       
       // Generate and download PDF
       downloadContractPDF({
@@ -241,7 +252,7 @@ export function ContractForm() {
       setIsGenerated(true);
       toast({
         title: "Contrato gerado com sucesso!",
-        description: "O contrato foi salvo e o download iniciado automaticamente.",
+        description: "O contrato foi salvo e o link de aceite já está pronto.",
       });
     } catch (error) {
       console.error("Contract generation error:", error);
@@ -594,26 +605,80 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
         </Button>
       </div>
 
-      {isGenerated && (
-        <div className="animate-slide-up rounded-xl bg-primary/5 border border-primary/20 p-6">
+      {isGenerated && acceptanceToken && (
+        <div className="animate-slide-up rounded-xl bg-primary/5 border border-primary/20 p-6 space-y-4">
           <div className="flex items-start gap-4">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
               <CheckCircle className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
               <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                Contrato pronto!
+                Contrato pronto! Envie para o cliente assinar
               </h3>
-              <p className="text-muted-foreground text-sm mb-4">
-                O download do seu contrato foi iniciado. Para enviar por e-mail com a chave PIX, 
-                conecte o backend clicando no botão abaixo.
+              <p className="text-muted-foreground text-sm">
+                O link de aceite foi gerado automaticamente. Envie ao cliente para que ele visualize e assine o contrato.
               </p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span>Funcionalidade de envio por e-mail requer Lovable Cloud</span>
-              </div>
             </div>
           </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Link de Aceite</span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={`${window.location.origin}/aceitar/${acceptanceToken}`}
+                className="flex-1 px-3 py-2 text-xs bg-muted border border-border rounded-md"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(`${window.location.origin}/aceitar/${acceptanceToken}`);
+                  setLinkCopied(true);
+                  toast({ title: "Link copiado!" });
+                  setTimeout(() => setLinkCopied(false), 2000);
+                }}
+              >
+                {linkCopied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            onClick={() => {
+              const link = `${window.location.origin}/aceitar/${acceptanceToken}`;
+              const clientName = watch("nomeCompleto") || "Cliente";
+              const clientPhone = watch("telefone") || "";
+              const message = encodeURIComponent(
+                `Olá ${clientName}! 👋\n\n` +
+                `Segue o link para visualizar e aceitar o contrato de guiamento Disney:\n\n` +
+                `${link}\n\n` +
+                `Por favor, revise os dados e confirme o aceite. Qualquer dúvida, estou à disposição! 😊`
+              );
+              const cleanPhone = clientPhone.replace(/\D/g, "");
+              const phoneWithCode = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+              window.open(`https://wa.me/${phoneWithCode}?text=${message}`, "_blank");
+            }}
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Enviar via WhatsApp
+          </Button>
+
+          <p className="text-xs text-muted-foreground text-center">
+            O cliente poderá visualizar os dados do contrato, desenhar sua assinatura 
+            e confirmar o aceite diretamente pelo link.
+          </p>
         </div>
       )}
     </form>
