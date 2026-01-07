@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon, Clock, CalendarClock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -32,9 +32,11 @@ export type ParkSelection = {
 interface ParkDateSelectorProps {
   value: ParkSelection[];
   onChange: (selections: ParkSelection[]) => void;
+  datesLater?: boolean;
+  onDatesLaterChange?: (value: boolean) => void;
 }
 
-export function ParkDateSelector({ value, onChange }: ParkDateSelectorProps) {
+export function ParkDateSelector({ value, onChange, datesLater = false, onDatesLaterChange }: ParkDateSelectorProps) {
   const [selectedParks, setSelectedParks] = useState<Record<string, Date | null>>(() => {
     const initial: Record<string, Date | null> = {};
     value.forEach((selection) => {
@@ -159,17 +161,53 @@ export function ParkDateSelector({ value, onChange }: ParkDateSelectorProps) {
         ))}
       </div>
 
-      {!hasAnySelection && (
+      {!hasAnySelection && !datesLater && (
         <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-amber-700 dark:text-amber-400">
           <Clock className="h-4 w-4" />
           <span className="text-sm font-medium">Selecione pelo menos um parque para continuar</span>
+        </div>
+      )}
+
+      {/* Option to define dates later */}
+      {onDatesLaterChange && (
+        <div 
+          className={cn(
+            "rounded-xl border p-4 cursor-pointer transition-all",
+            datesLater 
+              ? "border-blue-500/50 bg-blue-500/10" 
+              : "border-border hover:border-muted-foreground/30"
+          )}
+          onClick={() => onDatesLaterChange(!datesLater)}
+        >
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="dates-later"
+              checked={datesLater}
+              onCheckedChange={(checked) => onDatesLaterChange(checked === true)}
+              className="h-5 w-5"
+            />
+            <div className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-blue-600" />
+              <div>
+                <label htmlFor="dates-later" className="font-medium cursor-pointer">
+                  Definir datas depois
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  Gere o contrato agora e defina os parques e datas posteriormente
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-export function formatParkSelections(selections: ParkSelection[]): string {
+export function formatParkSelections(selections: ParkSelection[], datesLater: boolean = false): string {
+  if (datesLater) {
+    return "Datas a definir";
+  }
   return selections
     .map((s) => `${format(s.date, "dd/MM", { locale: ptBR })} - ${s.parkName}`)
     .join("\n");
