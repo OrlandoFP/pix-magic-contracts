@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { parse } from "date-fns";
@@ -97,15 +97,9 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     }
   }, [contract]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-  } = useForm<ContractFormData>({
-    resolver: zodResolver(contractFormSchema),
-    values: contract ? {
+  const formValues = useMemo<ContractFormData | undefined>(() => {
+    if (!contract) return undefined;
+    return {
       nomeCompleto: contract.nome_completo,
       cpf: contract.cpf,
       email: contract.email,
@@ -117,7 +111,18 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       datasRequeridas: contract.datas_requeridas,
       quantidadePessoas: String(contract.quantidade_pessoas || 1),
       hospedeDisney: contract.hospede_disney,
-    } : undefined,
+    };
+  }, [contract]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<ContractFormData>({
+    resolver: zodResolver(contractFormSchema),
+    values: formValues,
   });
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
