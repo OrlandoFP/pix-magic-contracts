@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { format, parseISO } from "date-fns";
+import { useMemo, useCallback } from "react";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Clock, CalendarClock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,63 +37,37 @@ interface ParkDateSelectorProps {
 }
 
 export function ParkDateSelector({ value, onChange, datesLater = false, onDatesLaterChange }: ParkDateSelectorProps) {
-  const [selectedParks, setSelectedParks] = useState<Record<string, Date | null>>(() => {
-    const initial: Record<string, Date | null> = {};
+  // Derive selectedParks from value prop (no internal state to avoid sync issues)
+  const selectedParks = useMemo(() => {
+    const map: Record<string, Date | null> = {};
     value.forEach((selection) => {
-      initial[selection.parkId] = selection.date;
+      map[selection.parkId] = selection.date;
     });
-    return initial;
-  });
+    return map;
+  }, [value]);
 
-  // Create a stable key for value comparison
-  const valueKey = useMemo(() => 
-    value.map(v => `${v.parkId}-${v.date?.getTime() ?? 'null'}`).join(','),
-    [value]
-  );
-
-  // Sync with external value changes (e.g., from AI parsing)
-  useEffect(() => {
-    const newState: Record<string, Date | null> = {};
-    value.forEach((selection) => {
-      newState[selection.parkId] = selection.date;
-    });
-    setSelectedParks(newState);
-  }, [valueKey]);
-
-  const handleParkToggle = (parkId: string, parkName: string, checked: boolean) => {
-    const updated = { ...selectedParks };
+  const handleParkToggle = useCallback((parkId: string, parkName: string, checked: boolean) => {
     if (checked) {
-      updated[parkId] = null;
+      // Add park with null date
+      onChange([...value, { parkId, parkName, date: null as unknown as Date }]);
     } else {
-      delete updated[parkId];
+      // Remove park
+      onChange(value.filter((s) => s.parkId !== parkId));
     }
-    setSelectedParks(updated);
-    updateValue(updated);
-  };
+  }, [value, onChange]);
 
-  const handleDateChange = (parkId: string, parkName: string, date: Date | undefined) => {
+  const handleDateChange = useCallback((parkId: string, parkName: string, date: Date | undefined) => {
     if (!date) return;
-    const updated = { ...selectedParks, [parkId]: date };
-    setSelectedParks(updated);
-    updateValue(updated);
-  };
-
-  const updateValue = (parks: Record<string, Date | null>) => {
-    const selections: ParkSelection[] = [];
-    PARKS.forEach((park) => {
-      if (parks[park.id] && parks[park.id] !== null) {
-        selections.push({
-          parkId: park.id,
-          parkName: park.name,
-          date: parks[park.id]!,
-        });
-      }
-    });
-    onChange(selections);
-  };
+    const existing = value.find((s) => s.parkId === parkId);
+    if (existing) {
+      onChange(value.map((s) => s.parkId === parkId ? { ...s, date } : s));
+    } else {
+      onChange([...value, { parkId, parkName, date }]);
+    }
+  }, [value, onChange]);
 
   const isParkSelected = (parkId: string) => parkId in selectedParks;
-  const hasAnySelection = Object.keys(selectedParks).length > 0;
+  const hasAnySelection = value.length > 0;
 
   return (
     <div className="space-y-4">
@@ -184,10 +158,7 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
               : "border-border hover:border-muted-foreground/30"
           )}
           onClick={(e) => {
-            // Avoid double-toggle when clicking on the checkbox OR its label
-            const target = e.target as HTMLElement;
-            if (target.closest('button[role="checkbox"]')) return;
-            if (target.closest('label[for="dates-later"]')) return;
+            e.stopPropagation();
             onDatesLaterChange(!datesLater);
           }}
         >
@@ -195,15 +166,18 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
             <Checkbox
               id="dates-later"
               checked={datesLater}
-              onCheckedChange={(checked) => onDatesLaterChange(checked === true)}
+              onCheckedChange={(checked) => {
+                onDatesLaterChange(checked === true);
+              }}
+              onClick={(e) => e.stopPropagation()}
               className="h-5 w-5"
             />
             <div className="flex items-center gap-2">
               <CalendarClock className="h-5 w-5 text-blue-600" />
               <div>
-                <label htmlFor="dates-later" className="font-medium cursor-pointer">
+                <span className="font-medium">
                   Definir datas depois
-                </label>
+                </span>
                 <p className="text-sm text-muted-foreground">
                   Gere o contrato agora e defina os parques e datas posteriormente
                 </p>
@@ -221,6 +195,7 @@ export function formatParkSelections(selections: ParkSelection[], datesLater: bo
     return "Datas a definir";
   }
   return selections
+    .filter((s) => s.date) // Only include selections with dates
     .map((s) => `${format(s.date, "dd/MM", { locale: ptBR })} - ${s.parkName}`)
     .join("\n");
 }
