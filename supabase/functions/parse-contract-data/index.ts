@@ -18,39 +18,40 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Get current date for context
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    const currentDay = today.getDate();
+
     const systemPrompt = `Você é um assistente especializado em extrair dados de formulários de reserva de guiamento Disney/Orlando.
 
-O texto segue este formato de template:
-- DADOS PESSOAIS: Nome completo, CPF, E-mail, Telefone, Endereço completo, CEP, Quantidade de pessoas
-- PARQUES E DATAS: Lista de parques onde o cliente preenche a data de visita (formato DD/MM/YYYY ou DD/MM/YY)
-- INFORMAÇÕES ADICIONAIS: Hóspede Disney (Sim/Não), Nome do guia
+DATA DE HOJE: ${currentDay}/${currentMonth}/${currentYear}
 
-Extraia e retorne um JSON com:
+REGRAS CRÍTICAS PARA DATAS:
+1. O cliente geralmente informa datas FUTURAS (próximas semanas ou meses)
+2. Se o mês não for informado, assuma o próximo mês que faça sentido (não meses passados)
+3. Se o ano não for informado:
+   - Se a data (dia/mês) ainda não passou este ano, use ${currentYear}
+   - Se a data já passou este ano, use ${currentYear + 1}
+4. Formatos aceitos: "7/jan", "07/01", "7 de janeiro", "dia 7", etc.
+5. MUITO IMPORTANTE: Converta SEMPRE para formato YYYY-MM-DD
 
-- nomeCompleto: nome completo do cliente
-- email: email do cliente  
-- cpf: CPF (mantenha formatação XXX.XXX.XXX-XX se presente)
-- telefone: telefone com DDD (formato (XX) XXXXX-XXXX)
-- cep: CEP (formato XXXXX-XXX)
-- endereco: endereço completo
-- quantidadePessoas: número de pessoas (integer, default 1 se não informado)
-- hospedeDisney: boolean (true se "Sim", false se "Não" ou não informado)
-- nomeGuia: nome do guia se informado
-- parkDates: array de objetos para cada parque COM DATA preenchida. Use estes IDs:
-  - "magic-kingdom" para Magic Kingdom
-  - "epcot" para EPCOT
-  - "hollywood-studios" para Hollywood Studios
-  - "animal-kingdom" para Animal Kingdom
-  - "epic-universe" para Epic Universe
-  - "universal-studios" para Universal Studios
-  - "islands-adventure" para Islands of Adventure
-  IMPORTANTE: Converta datas de DD/MM/YYYY para formato ISO YYYY-MM-DD
-  Exemplo: "15/01/2025" → "2025-01-15"
-  
-  Formato: { "parkId": "magic-kingdom", "date": "2025-01-15" }
+EXEMPLOS de conversão (considerando hoje ${currentDay}/${currentMonth}/${currentYear}):
+- "7/jan" ou "07/01" → "${currentMonth > 1 ? currentYear + 1 : currentYear}-01-07"
+- "15/02" → "${currentMonth > 2 ? currentYear + 1 : currentYear}-02-15"
+- "dia 20 de março" → "${currentMonth > 3 ? currentYear + 1 : currentYear}-03-20"
 
-IGNORE parques sem data preenchida (linhas com apenas ":" ou vazias).
-Retorne APENAS o JSON válido, sem explicações ou markdown.`;
+IDs dos parques (use EXATAMENTE estes):
+- magic-kingdom → Magic Kingdom
+- epcot → EPCOT  
+- hollywood-studios → Hollywood Studios
+- animal-kingdom → Animal Kingdom
+- epic-universe → Epic Universe
+- universal-studios → Universal Studios
+- islands-adventure → Islands of Adventure
+
+IGNORE parques sem data preenchida.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -62,8 +63,79 @@ Retorne APENAS o JSON válido, sem explicações ou markdown.`;
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: rawText },
+          { role: "user", content: `Extraia os dados do seguinte texto:\n\n${rawText}` },
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "extract_contract_data",
+              description: "Extrai dados estruturados de um formulário de reserva de guiamento Disney",
+              parameters: {
+                type: "object",
+                properties: {
+                  nomeCompleto: { 
+                    type: "string", 
+                    description: "Nome completo do cliente" 
+                  },
+                  email: { 
+                    type: "string", 
+                    description: "E-mail do cliente" 
+                  },
+                  cpf: { 
+                    type: "string", 
+                    description: "CPF formatado XXX.XXX.XXX-XX" 
+                  },
+                  telefone: { 
+                    type: "string", 
+                    description: "Telefone com DDD (XX) XXXXX-XXXX" 
+                  },
+                  cep: { 
+                    type: "string", 
+                    description: "CEP formatado XXXXX-XXX" 
+                  },
+                  endereco: { 
+                    type: "string", 
+                    description: "Endereço completo" 
+                  },
+                  quantidadePessoas: { 
+                    type: "integer", 
+                    description: "Número de pessoas (default 1)" 
+                  },
+                  hospedeDisney: { 
+                    type: "boolean", 
+                    description: "Se é hóspede Disney (true/false)" 
+                  },
+                  nomeGuia: { 
+                    type: "string", 
+                    description: "Nome do guia se informado" 
+                  },
+                  parkDates: {
+                    type: "array",
+                    description: "Array de parques com suas datas",
+                    items: {
+                      type: "object",
+                      properties: {
+                        parkId: { 
+                          type: "string", 
+                          enum: ["magic-kingdom", "epcot", "hollywood-studios", "animal-kingdom", "epic-universe", "universal-studios", "islands-adventure"],
+                          description: "ID do parque" 
+                        },
+                        date: { 
+                          type: "string", 
+                          description: "Data no formato YYYY-MM-DD" 
+                        }
+                      },
+                      required: ["parkId", "date"]
+                    }
+                  }
+                },
+                required: ["nomeCompleto"]
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "extract_contract_data" } },
       }),
     });
 
@@ -89,20 +161,27 @@ Retorne APENAS o JSON válido, sem explicações ou markdown.`;
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    console.log("AI response:", JSON.stringify(data, null, 2));
     
-    // Extract JSON from the response
+    // Extract data from tool call
     let parsedData;
     try {
-      // Try to find JSON in the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsedData = JSON.parse(jsonMatch[0]);
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall && toolCall.function?.arguments) {
+        parsedData = JSON.parse(toolCall.function.arguments);
+        console.log("Parsed data from tool call:", JSON.stringify(parsedData, null, 2));
       } else {
-        throw new Error("No JSON found in response");
+        // Fallback: try to parse from content
+        const content = data.choices?.[0]?.message?.content || "";
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedData = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("No structured data found in response");
+        }
       }
     } catch (parseError) {
-      console.error("Error parsing AI response:", parseError, content);
+      console.error("Error parsing AI response:", parseError, data);
       return new Response(JSON.stringify({ error: "Erro ao interpretar resposta da IA" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
