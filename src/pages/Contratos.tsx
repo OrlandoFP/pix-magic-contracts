@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, FileText, User, CalendarDays, List } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, FileText, User, CalendarDays, List, Search, Filter, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { GuideCalendar } from "@/components/GuideCalendar";
@@ -26,6 +28,7 @@ interface Contract {
   valor: string;
   created_at: string;
   hospede_disney: boolean;
+  comprado?: boolean;
   signed_contract_url?: string | null;
   payment_receipt_url?: string | null;
   acceptance_token?: string | null;
@@ -33,10 +36,17 @@ interface Contract {
   signature_url?: string | null;
 }
 
+type StatusFilter = "all" | "pending" | "accepted" | "paid" | "purchased";
+
 const Contratos = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [guideFilter, setGuideFilter] = useState<"all" | "rafael" | "kleber">("all");
   
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -108,11 +118,71 @@ const Contratos = () => {
     setDeleteDialogOpen(true);
   };
 
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setGuideFilter("all");
+  };
 
-  const rafaelContracts = contracts.filter(
+  const hasActiveFilters = searchQuery || statusFilter !== "all" || guideFilter !== "all";
+
+  // Apply all filters
+  const filteredContracts = useMemo(() => {
+    return contracts.filter((contract) => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          contract.nome_completo.toLowerCase().includes(query) ||
+          contract.email.toLowerCase().includes(query) ||
+          contract.telefone.includes(query) ||
+          contract.cpf.includes(query);
+        if (!matchesSearch) return false;
+      }
+
+      // Guide filter
+      if (guideFilter !== "all") {
+        const guideMatch = contract.nome_guia.toLowerCase().includes(guideFilter);
+        if (!guideMatch) return false;
+      }
+
+      // Status filter
+      if (statusFilter !== "all") {
+        switch (statusFilter) {
+          case "pending":
+            if (contract.accepted_at) return false;
+            break;
+          case "accepted":
+            if (!contract.accepted_at) return false;
+            break;
+          case "paid":
+            if (!contract.payment_receipt_url) return false;
+            break;
+          case "purchased":
+            if (!contract.comprado) return false;
+            break;
+        }
+      }
+
+      return true;
+    });
+  }, [contracts, searchQuery, statusFilter, guideFilter]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const total = contracts.length;
+    const accepted = contracts.filter(c => c.accepted_at).length;
+    const paid = contracts.filter(c => c.payment_receipt_url).length;
+    const purchased = contracts.filter(c => c.comprado).length;
+    const pending = total - accepted;
+    
+    return { total, accepted, paid, purchased, pending };
+  }, [contracts]);
+
+  const rafaelContracts = filteredContracts.filter(
     (c) => c.nome_guia.toLowerCase().includes("rafael")
   );
-  const kleberContracts = contracts.filter(
+  const kleberContracts = filteredContracts.filter(
     (c) => c.nome_guia.toLowerCase().includes("kleber")
   );
 
@@ -122,6 +192,11 @@ const Contratos = () => {
         <div className="text-center py-12 text-muted-foreground">
           <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p>Nenhum contrato encontrado</p>
+          {hasActiveFilters && (
+            <Button variant="link" onClick={clearFilters} className="mt-2">
+              Limpar filtros
+            </Button>
+          )}
         </div>
       );
     }
@@ -160,13 +235,130 @@ const Contratos = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <Card className="bg-card">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.pending}</p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-400/80">Pendentes</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.accepted}</p>
+              <p className="text-xs text-blue-600/80 dark:text-blue-400/80">Aceitos</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.paid}</p>
+              <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">Pagos</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.purchased}</p>
+              <p className="text-xs text-green-600/80 dark:text-green-400/80">Comprados</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-3">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, email, telefone ou CPF..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="accepted">Aceitos</SelectItem>
+                  <SelectItem value="paid">Pagos</SelectItem>
+                  <SelectItem value="purchased">Comprados</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Guide Filter */}
+              <Select value={guideFilter} onValueChange={(v) => setGuideFilter(v as "all" | "rafael" | "kleber")}>
+                <SelectTrigger className="w-full md:w-[150px]">
+                  <User className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Guia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Guias</SelectItem>
+                  <SelectItem value="rafael">Rafael</SelectItem>
+                  <SelectItem value="kleber">Kleber</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters} className="gap-2">
+                  <X className="h-4 w-4" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+
+            {/* Active filters badges */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {searchQuery && (
+                  <Badge variant="secondary" className="gap-1">
+                    Busca: "{searchQuery}"
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                  </Badge>
+                )}
+                {statusFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    Status: {statusFilter === "pending" ? "Pendentes" : statusFilter === "accepted" ? "Aceitos" : statusFilter === "paid" ? "Pagos" : "Comprados"}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setStatusFilter("all")} />
+                  </Badge>
+                )}
+                {guideFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    Guia: {guideFilter === "rafael" ? "Rafael" : "Kleber"}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => setGuideFilter("all")} />
+                  </Badge>
+                )}
+                <span className="text-sm text-muted-foreground ml-2">
+                  {filteredContracts.length} resultado(s)
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Main Content */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Contratos por Guia
+                <FileText className="h-5 w-5" />
+                Contratos
+                <Badge variant="outline">{filteredContracts.length}</Badge>
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Button
@@ -195,7 +387,7 @@ const Contratos = () => {
               <div className="text-center py-12 text-muted-foreground">
                 Carregando contratos...
               </div>
-            ) : (
+            ) : guideFilter === "all" ? (
               <Tabs defaultValue="rafael" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="rafael" className="flex items-center gap-2">
@@ -228,6 +420,16 @@ const Contratos = () => {
                   )}
                 </TabsContent>
               </Tabs>
+            ) : (
+              // When a specific guide is selected, show only that guide's contracts
+              viewMode === "calendar" ? (
+                <GuideCalendar 
+                  contracts={filteredContracts} 
+                  guideName={guideFilter === "rafael" ? "Rafael" : "Kleber"} 
+                />
+              ) : (
+                <ContractList data={filteredContracts} />
+              )
             )}
           </CardContent>
         </Card>
