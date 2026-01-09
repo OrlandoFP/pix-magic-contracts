@@ -1,4 +1,3 @@
-import { Database } from "lucide-react";
 import { ContractForm } from "@/components/ContractForm";
 import { Link } from "react-router-dom";
 
@@ -11,13 +10,20 @@ const Index = () => {
           <h1 className="font-display text-xl font-bold text-primary-foreground">
             Contratos Disney
           </h1>
-          <Link
-            to="/contratos"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg glass-effect text-gold-light text-sm font-medium hover:bg-white/10 transition-colors"
-          >
-            <Database className="h-4 w-4" />
-            Contratos
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/contratos/kleber"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg glass-effect text-gold-light text-sm font-medium hover:bg-white/10 transition-colors"
+            >
+              Kleber
+            </Link>
+            <Link
+              to="/contratos/rafael"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg glass-effect text-gold-light text-sm font-medium hover:bg-white/10 transition-colors"
+            >
+              Rafael
+            </Link>
+          </div>
         </div>
       </nav>
 

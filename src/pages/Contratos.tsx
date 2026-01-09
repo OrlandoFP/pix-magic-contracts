@@ -1,10 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, FileText, User, CalendarDays, List, Search, Filter, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowLeft, FileText, CalendarDays, List, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GuideCalendar } from "@/components/GuideCalendar";
 import { Button } from "@/components/ui/button";
@@ -36,13 +35,15 @@ interface Contract {
 }
 
 type StatusFilter = "all" | "pending" | "accepted" | "paid" | "purchased";
-type SelectedGuide = "rafael" | "kleber" | null;
 
 const Contratos = () => {
+  const { guia } = useParams<{ guia: string }>();
+  const selectedGuide = guia?.toLowerCase() as "rafael" | "kleber";
+  const guideName = selectedGuide === "rafael" ? "Rafael" : "Kleber";
+  
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("list");
-  const [selectedGuide, setSelectedGuide] = useState<SelectedGuide>(null);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,11 +122,6 @@ const Contratos = () => {
     setStatusFilter("all");
   };
 
-  const handleBackToGuides = () => {
-    setSelectedGuide(null);
-    clearFilters();
-  };
-
   const hasActiveFilters = searchQuery || statusFilter !== "all";
 
   // Get contracts for selected guide
@@ -182,16 +178,6 @@ const Contratos = () => {
     return { total, accepted, paid, purchased, pending };
   }, [guideContracts]);
 
-  // Global stats for guide selection
-  const globalStats = useMemo(() => {
-    const rafael = contracts.filter(c => c.nome_guia.toLowerCase().includes("rafael"));
-    const kleber = contracts.filter(c => c.nome_guia.toLowerCase().includes("kleber"));
-    return {
-      rafael: { total: rafael.length, pending: rafael.filter(c => !c.accepted_at).length },
-      kleber: { total: kleber.length, pending: kleber.filter(c => !c.accepted_at).length },
-    };
-  }, [contracts]);
-
   const ContractList = ({ data }: { data: Contract[] }) => {
     if (data.length === 0) {
       return (
@@ -221,94 +207,17 @@ const Contratos = () => {
     );
   };
 
-  // Guide Selection View
-  if (!selectedGuide) {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="gradient-hero text-primary-foreground py-8">
-          <div className="container mx-auto px-4">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground mb-4 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar
-            </Link>
-            <h1 className="font-display text-3xl md:text-4xl font-bold">
-              Agenda dos Guias
-            </h1>
-            <p className="text-primary-foreground/80 mt-2">
-              Selecione um guia para ver os contratos
-            </p>
-          </div>
-        </header>
-
-        <main className="container mx-auto px-4 py-8">
-          {loading ? (
-            <div className="text-center py-12 text-muted-foreground">
-              Carregando contratos...
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-              {/* Rafael Card */}
-              <Card 
-                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] border-2 hover:border-primary"
-                onClick={() => setSelectedGuide("rafael")}
-              >
-                <CardContent className="p-8 text-center">
-                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <User className="h-10 w-10 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-bold">Rafael</h2>
-                </CardContent>
-              </Card>
-
-              {/* Kleber Card */}
-              <Card 
-                className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] border-2 hover:border-primary"
-                onClick={() => setSelectedGuide("kleber")}
-              >
-                <CardContent className="p-8 text-center">
-                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <User className="h-10 w-10 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-bold">Kleber</h2>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </main>
-
-        <ContractEditDialog
-          contract={selectedContract}
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-        />
-
-        <ContractDeleteDialog
-          contractId={contractToDelete?.id ?? null}
-          contractName={contractToDelete?.name ?? null}
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-        />
-      </div>
-    );
-  }
-
-  // Guide Contracts View
-  const guideName = selectedGuide === "rafael" ? "Rafael" : "Kleber";
-
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-hero text-primary-foreground py-8">
         <div className="container mx-auto px-4">
-          <button
-            onClick={handleBackToGuides}
+          <Link
+            to="/"
             className="inline-flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground mb-4 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Voltar para Guias
-          </button>
+            Voltar
+          </Link>
           <h1 className="font-display text-3xl md:text-4xl font-bold">
             Contratos - {guideName}
           </h1>
@@ -444,7 +353,11 @@ const Contratos = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {viewMode === "calendar" ? (
+            {loading ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Carregando contratos...
+              </div>
+            ) : viewMode === "calendar" ? (
               <GuideCalendar contracts={filteredContracts} guideName={guideName} />
             ) : (
               <ContractList data={filteredContracts} />
