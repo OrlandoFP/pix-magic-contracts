@@ -25,6 +25,7 @@ import {
   formatPhone,
 } from "@/lib/contract-validation";
 import { ParkDateSelector, PARKS, formatParkSelections, type ParkSelection } from "@/components/ParkDateSelector";
+import { getContractPDFBlob } from "@/lib/contract-pdf";
 
 interface Contract {
   id: string;
@@ -148,6 +149,8 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     try {
       // Build datas_requeridas from park selections
       const datasRequeridas = formatParkSelections(parkSelections, datesLater);
+      const quantidadeDias = parkSelections.length || 1;
+      const quantidadePessoas = parseInt(data.quantidadePessoas || "1");
       
       const { error } = await supabase
         .from("contracts")
@@ -161,17 +164,58 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           nome_guia: data.nomeGuia,
           valor: data.valor,
           datas_requeridas: datasRequeridas,
-          quantidade_dias: parkSelections.length || 1,
-          quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
+          quantidade_dias: quantidadeDias,
+          quantidade_pessoas: quantidadePessoas,
           hospede_disney: data.hospedeDisney,
         })
         .eq("id", contract.id);
 
       if (error) throw error;
       
+      // Regenerate and upload the PDF with updated data
+      try {
+        const pdfBlob = getContractPDFBlob({
+          nomeCompleto: data.nomeCompleto,
+          cpf: data.cpf,
+          endereco: data.endereco,
+          cep: data.cep,
+          email: data.email,
+          telefone: data.telefone,
+          datasRequeridas: datasRequeridas,
+          nomeGuia: data.nomeGuia,
+          quantidadeDias: String(quantidadeDias),
+          valor: data.valor,
+          quantidadePessoas: String(quantidadePessoas),
+        });
+
+        const fileName = `contracts/${contract.id}_${Date.now()}.pdf`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("contract-documents")
+          .upload(fileName, pdfBlob, { 
+            contentType: "application/pdf",
+            upsert: false 
+          });
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from("contract-documents")
+            .getPublicUrl(fileName);
+
+          // Update the signed_contract_url with the new PDF
+          await supabase
+            .from("contracts")
+            .update({ signed_contract_url: urlData.publicUrl })
+            .eq("id", contract.id);
+        }
+      } catch (pdfError) {
+        console.error("PDF generation error:", pdfError);
+        // Don't fail the entire update if PDF generation fails
+      }
+      
       toast({
         title: "Contrato atualizado!",
-        description: "As alterações foram salvas com sucesso.",
+        description: "As alterações e o PDF foram atualizados com sucesso.",
       });
       
       onOpenChange(false);
