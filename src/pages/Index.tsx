@@ -16,7 +16,7 @@ const Index = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg glass-effect text-gold-light text-sm font-medium hover:bg-white/10 transition-colors"
           >
             <Database className="h-4 w-4" />
-            Dashboard
+            Contratos
           </Link>
         </div>
       </nav>
