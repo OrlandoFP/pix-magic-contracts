@@ -249,7 +249,7 @@ const Contratos = () => {
               Carregando contratos...
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
               {/* Rafael Card */}
               <Card 
                 className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] border-2 hover:border-primary"
@@ -259,18 +259,7 @@ const Contratos = () => {
                   <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <User className="h-10 w-10 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold mb-2">Rafael</h2>
-                  <div className="flex justify-center gap-4 mt-4">
-                    <div>
-                      <p className="text-3xl font-bold text-primary">{globalStats.rafael.total}</p>
-                      <p className="text-sm text-muted-foreground">Contratos</p>
-                    </div>
-                    <div className="w-px bg-border" />
-                    <div>
-                      <p className="text-3xl font-bold text-amber-500">{globalStats.rafael.pending}</p>
-                      <p className="text-sm text-muted-foreground">Pendentes</p>
-                    </div>
-                  </div>
+                  <h2 className="text-2xl font-bold">Rafael</h2>
                 </CardContent>
               </Card>
 
@@ -283,18 +272,7 @@ const Contratos = () => {
                   <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <User className="h-10 w-10 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold mb-2">Kleber</h2>
-                  <div className="flex justify-center gap-4 mt-4">
-                    <div>
-                      <p className="text-3xl font-bold text-primary">{globalStats.kleber.total}</p>
-                      <p className="text-sm text-muted-foreground">Contratos</p>
-                    </div>
-                    <div className="w-px bg-border" />
-                    <div>
-                      <p className="text-3xl font-bold text-amber-500">{globalStats.kleber.pending}</p>
-                      <p className="text-sm text-muted-foreground">Pendentes</p>
-                    </div>
-                  </div>
+                  <h2 className="text-2xl font-bold">Kleber</h2>
                 </CardContent>
               </Card>
             </div>
