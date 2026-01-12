@@ -20,7 +20,8 @@ import {
 } from "@/lib/contract-validation";
 import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
 import { ContractGuidelinesDialog } from "./ContractGuidelinesDialog";
-import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getUSDPrice } from "@/lib/pricing";
+import { PaymentOptionsTable } from "./PaymentOptionsTable";
+import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getUSDPrice, calculateBasePrice, calculateInstallmentOptions } from "@/lib/pricing";
 const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
 
 DADOS PESSOAIS:
@@ -67,6 +68,7 @@ export function ContractForm() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(DEFAULT_EXCHANGE_RATE);
   const [isAutoPrice, setIsAutoPrice] = useState(true);
+  const [selectedInstallment, setSelectedInstallment] = useState(0); // 0 = à vista
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -115,18 +117,28 @@ export function ContractForm() {
     setDatesLater(false);
     setExchangeRate(DEFAULT_EXCHANGE_RATE);
     setIsAutoPrice(true);
+    setSelectedInstallment(0);
   };
 
-  // Auto-calculate price based on park selections and exchange rate
+  // Auto-calculate price based on park selections, exchange rate, and selected installment
+  const handleInstallmentSelect = (installments: number, totalValue: number) => {
+    setSelectedInstallment(installments);
+    setIsAutoPrice(true);
+    setValue("valor", formatPriceBRL(totalValue));
+  };
+
+  // Auto-calculate price when days or exchange rate changes (maintains selected installment)
   useEffect(() => {
     if (!isAutoPrice) return;
     
     const days = datesLater ? 0 : parkSelections.length;
     if (days > 0) {
-      const price = calculatePrice(days, exchangeRate);
-      setValue("valor", formatPriceBRL(price));
+      const basePrice = calculateBasePrice(days, exchangeRate);
+      const options = calculateInstallmentOptions(basePrice);
+      const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
+      setValue("valor", formatPriceBRL(selectedOption.totalValue));
     }
-  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, setValue]);
+  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, selectedInstallment, setValue]);
 
   const hospedeDisney = watch("hospedeDisney");
 
@@ -507,16 +519,15 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
 
           {/* Pricing Section */}
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
-              <Label className="text-base font-semibold">Precificação à Vista</Label>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="exchangeRate">Câmbio (R$/USD)</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-primary" />
+                <Label className="text-base font-semibold">Opções de Pagamento</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="exchangeRate" className="text-sm text-muted-foreground">Câmbio:</Label>
+                <div className="relative w-24">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-xs">
                     R$
                   </span>
                   <Input
@@ -531,76 +542,76 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                         setExchangeRate(value);
                       }
                     }}
-                    className="pl-10"
+                    className="pl-8 h-8 text-sm"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Dias Selecionados</Label>
-                <div className="h-10 px-4 rounded-md border bg-muted flex items-center justify-between">
-                  <span className="font-medium">{datesLater ? 0 : parkSelections.length}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {parkSelections.length > 0 && !datesLater 
-                      ? `(US$ ${getUSDPrice(parkSelections.length).toFixed(0)})`
-                      : ""}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="valor">Valor Total (R$) *</Label>
-                  {isAutoPrice && (
-                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                      <RefreshCw className="h-3 w-3" />
-                      Auto
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                    R$
-                  </span>
-                  <Input
-                    id="valor"
-                    placeholder="0,00"
-                    className="pl-12"
-                    {...register("valor")}
-                    onChange={(e) => {
-                      setIsAutoPrice(false);
-                      setValue("valor", e.target.value);
-                    }}
-                  />
-                </div>
-                {!isAutoPrice && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs h-7 px-2"
-                    onClick={() => {
-                      setIsAutoPrice(true);
-                      const days = datesLater ? 0 : parkSelections.length;
-                      if (days > 0) {
-                        const price = calculatePrice(days, exchangeRate);
-                        setValue("valor", formatPriceBRL(price));
-                      }
-                    }}
-                  >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Restaurar cálculo automático
-                  </Button>
-                )}
-                {errors.valor && (
-                  <p className="text-sm text-destructive">{errors.valor.message}</p>
-                )}
               </div>
             </div>
+            
+            <PaymentOptionsTable
+              days={datesLater ? 0 : parkSelections.length}
+              exchangeRate={exchangeRate}
+              selectedInstallment={selectedInstallment}
+              onSelect={handleInstallmentSelect}
+            />
 
-            <p className="text-xs text-muted-foreground">
-              Preços calculados automaticamente com base na tabela à vista. Edite manualmente se necessário.
-            </p>
+            {/* Manual value override */}
+            <div className="pt-3 border-t border-border/50">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="valor" className="text-sm">Valor Final do Contrato (R$) *</Label>
+                    {isAutoPrice && (
+                      <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                        <RefreshCw className="h-3 w-3" />
+                        Auto
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
+                        R$
+                      </span>
+                      <Input
+                        id="valor"
+                        placeholder="0,00"
+                        className="pl-10"
+                        {...register("valor")}
+                        onChange={(e) => {
+                          setIsAutoPrice(false);
+                          setValue("valor", e.target.value);
+                        }}
+                      />
+                    </div>
+                    {!isAutoPrice && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs whitespace-nowrap"
+                        onClick={() => {
+                          setIsAutoPrice(true);
+                          const days = datesLater ? 0 : parkSelections.length;
+                          if (days > 0) {
+                            const basePrice = calculateBasePrice(days, exchangeRate);
+                            const options = calculateInstallmentOptions(basePrice);
+                            const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
+                            setValue("valor", formatPriceBRL(selectedOption.totalValue));
+                          }
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Restaurar
+                      </Button>
+                    )}
+                  </div>
+                  {errors.valor && (
+                    <p className="text-sm text-destructive">{errors.valor.message}</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
