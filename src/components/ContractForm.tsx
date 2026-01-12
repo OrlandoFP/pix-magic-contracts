@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon, Plus } from "lucide-react";
+import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon, Plus, DollarSign, RefreshCw } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/contract-validation";
 import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
 import { ContractGuidelinesDialog } from "./ContractGuidelinesDialog";
+import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getUSDPrice } from "@/lib/pricing";
 const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
 
 DADOS PESSOAIS:
@@ -64,6 +65,8 @@ export function ContractForm() {
   const [savedContractId, setSavedContractId] = useState<string | null>(null);
   const [acceptanceToken, setAcceptanceToken] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState(DEFAULT_EXCHANGE_RATE);
+  const [isAutoPrice, setIsAutoPrice] = useState(true);
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -110,7 +113,20 @@ export function ContractForm() {
     setAcceptanceToken(null);
     setLinkCopied(false);
     setDatesLater(false);
+    setExchangeRate(DEFAULT_EXCHANGE_RATE);
+    setIsAutoPrice(true);
   };
+
+  // Auto-calculate price based on park selections and exchange rate
+  useEffect(() => {
+    if (!isAutoPrice) return;
+    
+    const days = datesLater ? 0 : parkSelections.length;
+    if (days > 0) {
+      const price = calculatePrice(days, exchangeRate);
+      setValue("valor", formatPriceBRL(price));
+    }
+  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, setValue]);
 
   const hospedeDisney = watch("hospedeDisney");
 
@@ -489,6 +505,104 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
             onDatesLaterChange={setDatesLater}
           />
 
+          {/* Pricing Section */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <Label className="text-base font-semibold">Precificação à Vista</Label>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="exchangeRate">Câmbio (R$/USD)</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
+                    R$
+                  </span>
+                  <Input
+                    id="exchangeRate"
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    value={exchangeRate}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value) && value > 0) {
+                        setExchangeRate(value);
+                      }
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Dias Selecionados</Label>
+                <div className="h-10 px-4 rounded-md border bg-muted flex items-center justify-between">
+                  <span className="font-medium">{datesLater ? 0 : parkSelections.length}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {parkSelections.length > 0 && !datesLater 
+                      ? `(US$ ${getUSDPrice(parkSelections.length).toFixed(0)})`
+                      : ""}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="valor">Valor Total (R$) *</Label>
+                  {isAutoPrice && (
+                    <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      Auto
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+                    R$
+                  </span>
+                  <Input
+                    id="valor"
+                    placeholder="0,00"
+                    className="pl-12"
+                    {...register("valor")}
+                    onChange={(e) => {
+                      setIsAutoPrice(false);
+                      setValue("valor", e.target.value);
+                    }}
+                  />
+                </div>
+                {!isAutoPrice && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7 px-2"
+                    onClick={() => {
+                      setIsAutoPrice(true);
+                      const days = datesLater ? 0 : parkSelections.length;
+                      if (days > 0) {
+                        const price = calculatePrice(days, exchangeRate);
+                        setValue("valor", formatPriceBRL(price));
+                      }
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Restaurar cálculo automático
+                  </Button>
+                )}
+                {errors.valor && (
+                  <p className="text-sm text-destructive">{errors.valor.message}</p>
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Preços calculados automaticamente com base na tabela à vista. Edite manualmente se necessário.
+            </p>
+          </div>
+
           <div className="grid gap-6 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="nomeGuia">Nome do Guia *</Label>
@@ -533,24 +647,6 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               </div>
               {errors.quantidadePessoas && (
                 <p className="text-sm text-destructive">{errors.quantidadePessoas.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="valor">Valor Total (R$) *</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                  R$
-                </span>
-                <Input
-                  id="valor"
-                  placeholder="0,00"
-                  className="pl-12"
-                  {...register("valor")}
-                />
-              </div>
-              {errors.valor && (
-                <p className="text-sm text-destructive">{errors.valor.message}</p>
               )}
             </div>
           </div>
