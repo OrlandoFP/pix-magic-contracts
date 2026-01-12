@@ -20,8 +20,8 @@ import {
 } from "@/lib/contract-validation";
 import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
 import { ContractGuidelinesDialog } from "./ContractGuidelinesDialog";
-import { PaymentOptionsTable } from "./PaymentOptionsTable";
-import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getUSDPrice, calculateBasePrice, calculateInstallmentOptions } from "@/lib/pricing";
+import { PaymentSelector, type PaymentType } from "./PaymentSelector";
+import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getCashPrice, calculateInstallmentOptions } from "@/lib/pricing";
 const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
 
 DADOS PESSOAIS:
@@ -68,6 +68,7 @@ export function ContractForm() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(DEFAULT_EXCHANGE_RATE);
   const [isAutoPrice, setIsAutoPrice] = useState(true);
+  const [paymentType, setPaymentType] = useState<PaymentType>('vista');
   const [selectedInstallment, setSelectedInstallment] = useState(0); // 0 = à vista
   const { toast } = useToast();
 
@@ -117,6 +118,7 @@ export function ContractForm() {
     setDatesLater(false);
     setExchangeRate(DEFAULT_EXCHANGE_RATE);
     setIsAutoPrice(true);
+    setPaymentType('vista');
     setSelectedInstallment(0);
   };
 
@@ -127,18 +129,22 @@ export function ContractForm() {
     setValue("valor", formatPriceBRL(totalValue));
   };
 
-  // Auto-calculate price when days or exchange rate changes (maintains selected installment)
+  // Auto-calculate price when days or exchange rate changes (maintains selected payment type)
   useEffect(() => {
     if (!isAutoPrice) return;
     
     const days = datesLater ? 0 : parkSelections.length;
     if (days > 0) {
-      const basePrice = calculateBasePrice(days, exchangeRate);
-      const options = calculateInstallmentOptions(basePrice);
-      const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
-      setValue("valor", formatPriceBRL(selectedOption.totalValue));
+      if (paymentType === 'vista') {
+        const cashPrice = getCashPrice(days, exchangeRate);
+        setValue("valor", formatPriceBRL(cashPrice));
+      } else {
+        const options = calculateInstallmentOptions(days, exchangeRate);
+        const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
+        setValue("valor", formatPriceBRL(selectedOption.totalValue));
+      }
     }
-  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, selectedInstallment, setValue]);
+  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, paymentType, selectedInstallment, setValue]);
 
   const hospedeDisney = watch("hospedeDisney");
 
@@ -548,11 +554,13 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               </div>
             </div>
             
-            <PaymentOptionsTable
+            <PaymentSelector
               days={datesLater ? 0 : parkSelections.length}
               exchangeRate={exchangeRate}
+              paymentType={paymentType}
               selectedInstallment={selectedInstallment}
-              onSelect={handleInstallmentSelect}
+              onPaymentTypeChange={setPaymentType}
+              onInstallmentSelect={handleInstallmentSelect}
             />
 
             {/* Manual value override */}
@@ -594,10 +602,14 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                           setIsAutoPrice(true);
                           const days = datesLater ? 0 : parkSelections.length;
                           if (days > 0) {
-                            const basePrice = calculateBasePrice(days, exchangeRate);
-                            const options = calculateInstallmentOptions(basePrice);
-                            const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
-                            setValue("valor", formatPriceBRL(selectedOption.totalValue));
+                            if (paymentType === 'vista') {
+                              const cashPrice = getCashPrice(days, exchangeRate);
+                              setValue("valor", formatPriceBRL(cashPrice));
+                            } else {
+                              const options = calculateInstallmentOptions(days, exchangeRate);
+                              const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
+                              setValue("valor", formatPriceBRL(selectedOption.totalValue));
+                            }
                           }
                         }}
                       >
