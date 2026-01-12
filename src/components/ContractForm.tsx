@@ -169,6 +169,7 @@ export function ContractForm() {
       cpf: credentials.cpf,
       telefone: credentials.telefone,
       contract_id: credentials.contract_id,
+      nome_guia: formData.nomeGuia,
       start_date: startDate,
       end_date: endDate,
       parks: parks
