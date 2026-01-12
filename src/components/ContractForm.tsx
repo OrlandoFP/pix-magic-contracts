@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon, Plus, DollarSign, RefreshCw } from "lucide-react";
+import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon, Plus, DollarSign, RefreshCw, Key, ExternalLink } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } fro
 import { ContractGuidelinesDialog } from "./ContractGuidelinesDialog";
 import { PaymentSelector, type PaymentType } from "./PaymentSelector";
 import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getCashPrice, calculateInstallmentOptions } from "@/lib/pricing";
+import { generatePassword, type UserCredentials } from "@/lib/password-generator";
 const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
 
 DADOS PESSOAIS:
@@ -70,6 +71,8 @@ export function ContractForm() {
   const [isAutoPrice, setIsAutoPrice] = useState(true);
   const [paymentType, setPaymentType] = useState<PaymentType>('vista');
   const [selectedInstallment, setSelectedInstallment] = useState(0); // 0 = à vista
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [generatedCredentials, setGeneratedCredentials] = useState<UserCredentials | null>(null);
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -120,6 +123,39 @@ export function ContractForm() {
     setIsAutoPrice(true);
     setPaymentType('vista');
     setSelectedInstallment(0);
+    setGeneratedCredentials(null);
+  };
+
+  // Function to send credentials to external webhook
+  const sendCredentialsToWebhook = async (credentials: UserCredentials) => {
+    if (!webhookUrl.trim()) {
+      console.log("No webhook URL configured, skipping...");
+      return;
+    }
+
+    try {
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        mode: "no-cors", // Handle CORS for external webhooks
+        body: JSON.stringify(credentials),
+      });
+
+      console.log("Credentials sent to webhook:", webhookUrl);
+      toast({
+        title: "Credenciais enviadas!",
+        description: "As credenciais foram enviadas para o sistema externo.",
+      });
+    } catch (error) {
+      console.error("Error sending webhook:", error);
+      toast({
+        title: "Aviso",
+        description: "Não foi possível enviar as credenciais para o webhook. Verifique a URL.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Auto-calculate price based on park selections, exchange rate, and selected installment
@@ -316,10 +352,30 @@ export function ContractForm() {
         formaPagamento: formaPagamento,
       });
       
+      // Generate user credentials and send to webhook
+      const password = generatePassword(10);
+      const credentials: UserCredentials = {
+        email: data.email,
+        password: password,
+        nome_completo: data.nomeCompleto,
+        cpf: data.cpf,
+        telefone: data.telefone,
+        contract_id: insertedData.id,
+      };
+      
+      setGeneratedCredentials(credentials);
+      
+      // Send credentials to webhook if URL is configured
+      if (webhookUrl.trim()) {
+        await sendCredentialsToWebhook(credentials);
+      }
+      
       setIsGenerated(true);
       toast({
         title: "Contrato gerado com sucesso!",
-        description: "O contrato foi salvo e o link de aceite já está pronto.",
+        description: webhookUrl.trim() 
+          ? "O contrato foi salvo e as credenciais foram enviadas." 
+          : "O contrato foi salvo e o link de aceite já está pronto.",
       });
     } catch (error) {
       console.error("Contract generation error:", error);
@@ -724,6 +780,23 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
             </p>
           </div>
 
+          {/* Webhook URL Field */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="webhookUrl">Webhook URL (opcional)</Label>
+            </div>
+            <Input
+              id="webhookUrl"
+              placeholder="https://seu-projeto.lovable.app/api/create-user ou URL do n8n"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              URL do webhook para criar login e senha no outro projeto. Deixe em branco se não precisar.
+            </p>
+          </div>
+
           {/* Contract Guidelines Button */}
           <div className="flex items-center justify-between pt-2">
             <ContractGuidelinesDialog onTermsChange={setCustomTerms} />
@@ -806,6 +879,46 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               </Button>
             </div>
           </div>
+
+          {/* Generated Credentials Display */}
+          {generatedCredentials && (
+            <div className="space-y-3 p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center gap-2">
+                <Key className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-800 dark:text-amber-200">Credenciais Geradas</span>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Login:</span>
+                  <code className="bg-background px-2 py-1 rounded text-xs font-mono">{generatedCredentials.email}</code>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Senha:</span>
+                  <div className="flex items-center gap-2">
+                    <code className="bg-background px-2 py-1 rounded text-xs font-mono">{generatedCredentials.password}</code>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(generatedCredentials.password);
+                        toast({ title: "Senha copiada!" });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              {webhookUrl.trim() && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <Check className="h-3 w-3" />
+                  Enviado para: {webhookUrl.substring(0, 50)}...
+                </p>
+              )}
+            </div>
+          )}
 
           <Button
             type="button"
