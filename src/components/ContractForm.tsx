@@ -293,6 +293,11 @@ export function ContractForm() {
       setSavedContractId(insertedData.id);
       setAcceptanceToken(newToken);
       
+      // Build payment method description
+      const formaPagamento = paymentType === 'vista' 
+        ? 'À Vista / Pix / Boleto' 
+        : `Parcelado (${selectedInstallment}x no Cartão)`;
+
       // Generate and download PDF
       downloadContractPDF({
         nomeCompleto: data.nomeCompleto,
@@ -308,6 +313,7 @@ export function ContractForm() {
         valor: data.valor,
         observacao: observacao || undefined,
         customTerms: customTerms,
+        formaPagamento: formaPagamento,
       });
       
       setIsGenerated(true);

@@ -15,6 +15,7 @@ interface ContractData {
   datas?: string;
   observacao?: string;
   customTerms?: string;
+  formaPagamento?: string; // "À Vista" ou "Parcelado (Nx)"
 }
 
 const CONTRACT_TERMS = `Serviço de compra e agendamento virtual das filas expressas: Lightning Lane Single Pass e Lightning Lane Multi Pass.
@@ -180,9 +181,13 @@ function renderPage1(
   drawTableRowClean(doc, margin + halfWidth, y, halfWidth, adventureRowHeight, "Pessoas:", data.quantidadePessoas || "-");
   y += adventureRowHeight;
 
-  // Row 2: Qtd Dias | Valor Total
+  // Row 2: Qtd Dias | Forma de Pagamento
   drawTableRowClean(doc, margin, y, halfWidth, adventureRowHeight, "Qtd Dias:", data.quantidadeDias);
-  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, adventureRowHeight, "Valor Total:", `R$ ${data.valor}`);
+  drawTableRowClean(doc, margin + halfWidth, y, halfWidth, adventureRowHeight, "Pagamento:", data.formaPagamento || "À Vista");
+  y += adventureRowHeight;
+
+  // Row 3: Valor Total (full width)
+  drawTableRowClean(doc, margin, y, contentWidth, adventureRowHeight, "Valor Total:", `R$ ${data.valor}`);
   y += adventureRowHeight;
 
   // Row 3: Parques (quebra automática de página quando necessário)
