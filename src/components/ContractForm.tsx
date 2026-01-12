@@ -127,33 +127,79 @@ export function ContractForm() {
     setGeneratedCredentials(null);
   };
 
-  // Function to send credentials to external webhook
-  const sendCredentialsToWebhook = async (credentials: UserCredentials) => {
+  // Function to send credentials to external webhook (Seu Roteiro Orlando)
+  const sendCredentialsToWebhook = async (
+    credentials: UserCredentials, 
+    parkSelectionsData: ParkSelection[],
+    formData: ContractFormData
+  ) => {
     if (!webhookUrl.trim()) {
       console.log("No webhook URL configured, skipping...");
       return;
     }
 
+    // Extract start and end dates from park selections
+    const sortedDates = parkSelectionsData
+      .filter(p => p.date)
+      .map(p => p.date!)
+      .sort((a, b) => a.getTime() - b.getTime());
+    
+    const startDate = sortedDates.length > 0 
+      ? sortedDates[0].toISOString().split('T')[0] 
+      : null;
+    const endDate = sortedDates.length > 0 
+      ? sortedDates[sortedDates.length - 1].toISOString().split('T')[0] 
+      : null;
+
+    // Build parks array with proper format
+    const parks = parkSelectionsData
+      .filter(p => p.date)
+      .map(p => ({
+        date: p.date!.toISOString().split('T')[0],
+        park: p.parkName,
+        time_start: "08:00", // Default time
+        time_end: "22:00",   // Default time
+        notes: formData.hospedeDisney ? "Hóspede Disney" : undefined
+      }));
+
+    const payload = {
+      email: credentials.email,
+      password: credentials.password,
+      nome_completo: credentials.nome_completo,
+      cpf: credentials.cpf,
+      telefone: credentials.telefone,
+      contract_id: credentials.contract_id,
+      start_date: startDate,
+      end_date: endDate,
+      parks: parks
+    };
+
     try {
-      await fetch(webhookUrl, {
+      const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqZmh5cWpncXV0a2FieGFlb3BpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0MDk1NDAsImV4cCI6MjA4Mjk4NTU0MH0.vzx_iOf-eadW6Gojpl1mgLKaJA53k-Vfdi_0bzuxCqo"
         },
-        mode: "no-cors", // Handle CORS for external webhooks
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(payload),
       });
 
-      console.log("Credentials sent to webhook:", webhookUrl);
-      toast({
-        title: "Credenciais enviadas!",
-        description: "As credenciais foram enviadas para o sistema externo.",
-      });
+      if (response.ok) {
+        console.log("Credentials sent to webhook successfully:", payload);
+        toast({
+          title: "Credenciais enviadas!",
+          description: "As credenciais foram enviadas para Seu Roteiro Orlando.",
+        });
+      } else {
+        const errorText = await response.text();
+        console.error("Webhook response error:", errorText);
+        throw new Error(errorText);
+      }
     } catch (error) {
       console.error("Error sending webhook:", error);
       toast({
         title: "Aviso",
-        description: "Não foi possível enviar as credenciais para o webhook. Verifique a URL.",
+        description: "Não foi possível enviar as credenciais para o webhook.",
         variant: "destructive",
       });
     }
@@ -368,7 +414,7 @@ export function ContractForm() {
       
       // Send credentials to webhook if URL is configured
       if (webhookUrl.trim()) {
-        await sendCredentialsToWebhook(credentials);
+        await sendCredentialsToWebhook(credentials, parkSelections, data);
       }
       
       setIsGenerated(true);
