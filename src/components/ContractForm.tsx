@@ -71,7 +71,8 @@ export function ContractForm() {
   const [isAutoPrice, setIsAutoPrice] = useState(true);
   const [paymentType, setPaymentType] = useState<PaymentType>('vista');
   const [selectedInstallment, setSelectedInstallment] = useState(0); // 0 = à vista
-  const [webhookUrl, setWebhookUrl] = useState("");
+  // URL fixa do webhook do projeto Seu Roteiro Orlando
+  const webhookUrl = "https://qjfhyqjgqutkabxaeopi.supabase.co/functions/v1/create-client";
   const [generatedCredentials, setGeneratedCredentials] = useState<UserCredentials | null>(null);
   const { toast } = useToast();
 
@@ -780,23 +781,6 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
             </p>
           </div>
 
-          {/* Webhook URL Field */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="webhookUrl">Webhook URL (opcional)</Label>
-            </div>
-            <Input
-              id="webhookUrl"
-              placeholder="https://seu-projeto.lovable.app/api/create-user ou URL do n8n"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              URL do webhook para criar login e senha no outro projeto. Deixe em branco se não precisar.
-            </p>
-          </div>
-
           {/* Contract Guidelines Button */}
           <div className="flex items-center justify-between pt-2">
             <ContractGuidelinesDialog onTermsChange={setCustomTerms} />
@@ -911,12 +895,10 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                   </div>
                 </div>
               </div>
-              {webhookUrl.trim() && (
-                <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                  <Check className="h-3 w-3" />
-                  Enviado para: {webhookUrl.substring(0, 50)}...
-                </p>
-              )}
+              <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                Enviado para: Seu Roteiro Orlando
+              </p>
             </div>
           )}
 
