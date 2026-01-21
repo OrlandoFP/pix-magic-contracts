@@ -21,6 +21,8 @@ export const PARKS = [
   { id: "epic-universe", name: "EPIC Universe" },
   { id: "universal-studios", name: "Universal Studios" },
   { id: "islands-adventure", name: "Islands of Adventure" },
+  { id: "seaworld", name: "SeaWorld" },
+  { id: "busch-gardens", name: "Busch Gardens" },
 ] as const;
 
 export type ParkSelection = {
