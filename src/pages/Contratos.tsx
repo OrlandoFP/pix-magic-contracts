@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ContractEditDialog } from "@/components/ContractEditDialog";
 import { ContractDeleteDialog } from "@/components/ContractDeleteDialog";
 import { ContractCard } from "@/components/ContractCard";
+import { ContractExport } from "@/components/ContractExport";
 
 interface Contract {
   id: string;
@@ -310,6 +311,9 @@ const Contratos = () => {
                   Lista
                 </Button>
               </div>
+
+              {/* Export */}
+              <ContractExport contracts={guideContracts} />
 
               {/* Clear Filters */}
               {hasActiveFilters && (
