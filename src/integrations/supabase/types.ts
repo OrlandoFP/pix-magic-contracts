@@ -29,6 +29,7 @@ export type Database = {
           endereco: string
           hospede_disney: boolean
           id: string
+          nf_emitida: boolean
           nome_completo: string
           nome_guia: string
           payment_receipt_url: string | null
@@ -53,6 +54,7 @@ export type Database = {
           endereco: string
           hospede_disney?: boolean
           id?: string
+          nf_emitida?: boolean
           nome_completo: string
           nome_guia: string
           payment_receipt_url?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           endereco?: string
           hospede_disney?: boolean
           id?: string
+          nf_emitida?: boolean
           nome_completo?: string
           nome_guia?: string
           payment_receipt_url?: string | null
