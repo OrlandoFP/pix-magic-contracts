@@ -12,6 +12,12 @@ const Index = () => {
           </h1>
           <div className="flex items-center gap-2">
             <Link
+              to="/faturamento"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gold/20 text-gold-light text-sm font-medium hover:bg-gold/30 transition-colors"
+            >
+              Faturamento
+            </Link>
+            <Link
               to="/contratos/kleber"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg glass-effect text-gold-light text-sm font-medium hover:bg-white/10 transition-colors"
             >
