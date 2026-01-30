@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, FileSpreadsheet, Search, X, Download, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 
 interface Contract {
@@ -19,6 +21,7 @@ interface Contract {
   created_at: string;
   accepted_at: string | null;
   payment_receipt_url: string | null;
+  nf_emitida: boolean;
 }
 
 const MONTHS = [
@@ -39,6 +42,7 @@ const MONTHS = [
 const Faturamento = () => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,7 +54,7 @@ const Faturamento = () => {
     const fetchContracts = async () => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("id, nome_completo, cpf, valor, nome_guia, created_at, accepted_at, payment_receipt_url")
+        .select("id, nome_completo, cpf, valor, nome_guia, created_at, accepted_at, payment_receipt_url, nf_emitida")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -63,6 +67,29 @@ const Faturamento = () => {
 
     fetchContracts();
   }, []);
+
+  const handleNfEmitidaChange = async (contractId: string, checked: boolean) => {
+    const { error } = await supabase
+      .from("contracts")
+      .update({ nf_emitida: checked })
+      .eq("id", contractId);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status da NF.",
+        variant: "destructive",
+      });
+    } else {
+      setContracts((prev) =>
+        prev.map((c) => (c.id === contractId ? { ...c, nf_emitida: checked } : c))
+      );
+      toast({
+        title: checked ? "NF marcada como emitida" : "NF desmarcada",
+        description: `Contrato atualizado com sucesso.`,
+      });
+    }
+  };
 
   // Get unique years from contracts
   const years = useMemo(() => {
@@ -320,6 +347,7 @@ const Faturamento = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-16 text-center">NF</TableHead>
                       <TableHead>Nome do Cliente</TableHead>
                       <TableHead>CPF</TableHead>
                       <TableHead>Valor</TableHead>
@@ -330,7 +358,14 @@ const Faturamento = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredContracts.map((contract) => (
-                      <TableRow key={contract.id}>
+                      <TableRow key={contract.id} className={contract.nf_emitida ? "bg-emerald-50/50 dark:bg-emerald-950/20" : ""}>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={contract.nf_emitida}
+                            onCheckedChange={(checked) => handleNfEmitidaChange(contract.id, checked as boolean)}
+                            aria-label="NF Emitida"
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{contract.nome_completo}</TableCell>
                         <TableCell className="font-mono text-sm">{contract.cpf}</TableCell>
                         <TableCell className="font-semibold text-primary">{contract.valor}</TableCell>
@@ -343,12 +378,16 @@ const Faturamento = () => {
                           {new Date(contract.created_at).toLocaleDateString("pt-BR")}
                         </TableCell>
                         <TableCell>
-                          {contract.payment_receipt_url ? (
+                          {contract.nf_emitida ? (
                             <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                              NF Emitida
+                            </Badge>
+                          ) : contract.payment_receipt_url ? (
+                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                               Pago
                             </Badge>
                           ) : contract.accepted_at ? (
-                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
                               Aceito
                             </Badge>
                           ) : (
