@@ -7,6 +7,8 @@ import {
   formatPriceBRL,
   getUSDPrice,
   CASH_PRICES_BRL,
+  MAX_INCLUDED_PEOPLE,
+  EXTRA_PERSON_PRICE_USD,
   type InstallmentOption 
 } from "@/lib/pricing";
 
@@ -15,6 +17,7 @@ export type PaymentType = 'vista' | 'parcelado';
 interface PaymentSelectorProps {
   days: number;
   exchangeRate: number;
+  numberOfPeople: number;
   paymentType: PaymentType;
   selectedInstallment: number;
   onPaymentTypeChange: (type: PaymentType) => void;
@@ -24,14 +27,19 @@ interface PaymentSelectorProps {
 export function PaymentSelector({ 
   days, 
   exchangeRate, 
+  numberOfPeople,
   paymentType,
   selectedInstallment,
   onPaymentTypeChange,
   onInstallmentSelect
 }: PaymentSelectorProps) {
-  const cashPrice = useMemo(() => getCashPrice(days, exchangeRate), [days, exchangeRate]);
-  const installmentOptions = useMemo(() => calculateInstallmentOptions(days, exchangeRate), [days, exchangeRate]);
-  const usdPrice = useMemo(() => getUSDPrice(days), [days]);
+  const cashPrice = useMemo(() => getCashPrice(days, exchangeRate, numberOfPeople), [days, exchangeRate, numberOfPeople]);
+  const installmentOptions = useMemo(() => calculateInstallmentOptions(days, exchangeRate, numberOfPeople), [days, exchangeRate, numberOfPeople]);
+  const usdPrice = useMemo(() => getUSDPrice(days, numberOfPeople), [days, numberOfPeople]);
+  
+  const hasExtraPeople = numberOfPeople > MAX_INCLUDED_PEOPLE;
+  const extraPeopleCount = hasExtraPeople ? numberOfPeople - MAX_INCLUDED_PEOPLE : 0;
+  const extraPeopleChargeUSD = hasExtraPeople ? extraPeopleCount * days * EXTRA_PERSON_PRICE_USD : 0;
 
   if (days < 1) {
     return (
@@ -45,6 +53,15 @@ export function PaymentSelector({
 
   return (
     <div className="space-y-4">
+      {/* Extra People Info */}
+      {hasExtraPeople && days > 0 && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-amber-700 dark:text-amber-400">
+          <span className="text-sm font-medium">
+            +{extraPeopleCount} pessoa{extraPeopleCount > 1 ? 's' : ''} extra = +${extraPeopleChargeUSD.toFixed(2)} USD ({extraPeopleCount} × {days} dias × $20)
+          </span>
+        </div>
+      )}
+      
       {/* Summary Header */}
       <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/50 border text-sm">
         <div className="text-center">
