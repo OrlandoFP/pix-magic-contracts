@@ -206,6 +206,10 @@ export function ContractForm() {
     }
   };
 
+  // Watch quantidadePessoas for pricing
+  const quantidadePessoas = watch("quantidadePessoas");
+  const numberOfPeople = parseInt(quantidadePessoas || "1") || 1;
+
   // Auto-calculate price based on park selections, exchange rate, and selected installment
   const handleInstallmentSelect = (installments: number, totalValue: number) => {
     setSelectedInstallment(installments);
@@ -213,22 +217,22 @@ export function ContractForm() {
     setValue("valor", formatPriceBRL(totalValue));
   };
 
-  // Auto-calculate price when days or exchange rate changes (maintains selected payment type)
+  // Auto-calculate price when days, exchange rate, or number of people changes (maintains selected payment type)
   useEffect(() => {
     if (!isAutoPrice) return;
     
     const days = datesLater ? 0 : parkSelections.length;
     if (days > 0) {
       if (paymentType === 'vista') {
-        const cashPrice = getCashPrice(days, exchangeRate);
+        const cashPrice = getCashPrice(days, exchangeRate, numberOfPeople);
         setValue("valor", formatPriceBRL(cashPrice));
       } else {
-        const options = calculateInstallmentOptions(days, exchangeRate);
+        const options = calculateInstallmentOptions(days, exchangeRate, numberOfPeople);
         const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
         setValue("valor", formatPriceBRL(selectedOption.totalValue));
       }
     }
-  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, paymentType, selectedInstallment, setValue]);
+  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, paymentType, selectedInstallment, numberOfPeople, setValue]);
 
   const hospedeDisney = watch("hospedeDisney");
 
@@ -667,6 +671,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
             <PaymentSelector
               days={datesLater ? 0 : parkSelections.length}
               exchangeRate={exchangeRate}
+              numberOfPeople={numberOfPeople}
               paymentType={paymentType}
               selectedInstallment={selectedInstallment}
               onPaymentTypeChange={setPaymentType}

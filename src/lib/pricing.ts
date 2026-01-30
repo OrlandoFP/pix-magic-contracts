@@ -27,6 +27,21 @@ export const BASE_EXCHANGE_RATE = 4.99;
 // Câmbio padrão atual (pode ser atualizado pelo guia)
 export const DEFAULT_EXCHANGE_RATE = 4.99;
 
+// Número máximo de pessoas incluídas no preço base
+export const MAX_INCLUDED_PEOPLE = 8;
+
+// Valor adicional por pessoa extra (acima de 8) por dia em USD
+export const EXTRA_PERSON_PRICE_USD = 20;
+
+/**
+ * Calcula o valor adicional para pessoas extras (acima de 8) em USD
+ */
+export function calculateExtraPeopleChargeUSD(days: number, numberOfPeople: number): number {
+  if (numberOfPeople <= MAX_INCLUDED_PEOPLE) return 0;
+  const extraPeople = numberOfPeople - MAX_INCLUDED_PEOPLE;
+  return extraPeople * days * EXTRA_PERSON_PRICE_USD;
+}
+
 // Taxas de parcelamento (baseado na imagem de referência)
 // 1x no cartão: +5.07%
 // 2x em diante: incrementa ~0.88% por parcela
@@ -58,53 +73,65 @@ export interface InstallmentOption {
 /**
  * Obtém o valor à vista em BRL para uma quantidade de dias
  * Usa a tabela fixa, mas ajusta se o câmbio mudou
+ * Agora inclui cobrança extra para grupos acima de 8 pessoas
  */
-export function getCashPrice(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE): number {
+export function getCashPrice(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE, numberOfPeople: number = 1): number {
   if (days < 1) return 0;
   
   // Se o câmbio for diferente do base, recalcular proporcionalmente
   const ratio = exchangeRate / BASE_EXCHANGE_RATE;
+  
+  let basePrice: number;
   
   if (days > 7) {
     // Para mais de 7 dias, calcular proporcionalmente
     const base7Price = CASH_PRICES_BRL[7];
     const pricePerExtraDay = (base7Price / 7) * 0.8; // ~80% do valor diário médio
     const extraDays = days - 7;
-    return (base7Price + (extraDays * pricePerExtraDay)) * ratio;
+    basePrice = (base7Price + (extraDays * pricePerExtraDay)) * ratio;
+  } else {
+    basePrice = (CASH_PRICES_BRL[days] || 0) * ratio;
   }
   
-  const basePrice = CASH_PRICES_BRL[days];
-  if (!basePrice) return 0;
+  // Adicionar cobrança extra para pessoas acima de 8
+  const extraPeopleChargeUSD = calculateExtraPeopleChargeUSD(days, numberOfPeople);
+  const extraPeopleChargeBRL = extraPeopleChargeUSD * exchangeRate;
   
-  return basePrice * ratio;
+  return basePrice + extraPeopleChargeBRL;
 }
 
 /**
  * Calcula o valor em BRL baseado na quantidade de dias e câmbio (valor base sem taxas - para parcelamento)
+ * Agora inclui cobrança extra para grupos acima de 8 pessoas
  */
-export function calculateBasePrice(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE): number {
+export function calculateBasePrice(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE, numberOfPeople: number = 1): number {
   if (days < 1) return 0;
+  
+  let usdPrice: number;
   
   // Se tiver mais de 7 dias, calcular proporcionalmente
   if (days > 7) {
     const basePrice = USD_PRICES[7];
     const extraDays = days - 7;
     const pricePerExtraDay = 50; // USD por dia adicional
-    return (basePrice + (extraDays * pricePerExtraDay)) * exchangeRate;
+    usdPrice = basePrice + (extraDays * pricePerExtraDay);
+  } else {
+    usdPrice = USD_PRICES[days] || 0;
   }
   
-  const usdPrice = USD_PRICES[days];
-  if (!usdPrice) return 0;
+  // Adicionar cobrança extra para pessoas acima de 8
+  const extraPeopleChargeUSD = calculateExtraPeopleChargeUSD(days, numberOfPeople);
   
-  return usdPrice * exchangeRate;
+  return (usdPrice + extraPeopleChargeUSD) * exchangeRate;
 }
 
 /**
  * Calcula as opções de parcelamento (1x a 12x no cartão)
+ * Agora inclui cobrança extra para grupos acima de 8 pessoas
  */
-export function calculateInstallmentOptions(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE): InstallmentOption[] {
+export function calculateInstallmentOptions(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE, numberOfPeople: number = 1): InstallmentOption[] {
   const options: InstallmentOption[] = [];
-  const basePrice = calculateBasePrice(days, exchangeRate);
+  const basePrice = calculateBasePrice(days, exchangeRate, numberOfPeople);
   
   if (basePrice <= 0) return options;
   
@@ -135,19 +162,29 @@ export function formatPriceBRL(value: number): string {
 
 /**
  * Obtém o preço em USD para uma quantidade de dias
+ * Agora inclui cobrança extra para grupos acima de 8 pessoas
  */
-export function getUSDPrice(days: number): number {
+export function getUSDPrice(days: number, numberOfPeople: number = 1): number {
   if (days < 1) return 0;
+  
+  let basePrice: number;
+  
   if (days > 7) {
-    const basePrice = USD_PRICES[7];
+    basePrice = USD_PRICES[7];
     const extraDays = days - 7;
     const pricePerExtraDay = 50;
-    return basePrice + (extraDays * pricePerExtraDay);
+    basePrice = basePrice + (extraDays * pricePerExtraDay);
+  } else {
+    basePrice = USD_PRICES[days] || 0;
   }
-  return USD_PRICES[days] || 0;
+  
+  // Adicionar cobrança extra para pessoas acima de 8
+  const extraPeopleChargeUSD = calculateExtraPeopleChargeUSD(days, numberOfPeople);
+  
+  return basePrice + extraPeopleChargeUSD;
 }
 
 // Mantém compatibilidade com código existente
-export function calculatePrice(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE): number {
-  return getCashPrice(days, exchangeRate);
+export function calculatePrice(days: number, exchangeRate: number = DEFAULT_EXCHANGE_RATE, numberOfPeople: number = 1): number {
+  return getCashPrice(days, exchangeRate, numberOfPeople);
 }
