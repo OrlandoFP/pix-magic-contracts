@@ -33,13 +33,40 @@ export function PaymentSelector({
   onPaymentTypeChange,
   onInstallmentSelect
 }: PaymentSelectorProps) {
-  const cashPrice = useMemo(() => getCashPrice(days, exchangeRate, numberOfPeople), [days, exchangeRate, numberOfPeople]);
-  const installmentOptions = useMemo(() => calculateInstallmentOptions(days, exchangeRate, numberOfPeople), [days, exchangeRate, numberOfPeople]);
-  const usdPrice = useMemo(() => getUSDPrice(days, numberOfPeople), [days, numberOfPeople]);
-  
-  const hasExtraPeople = numberOfPeople > MAX_INCLUDED_PEOPLE;
-  const extraPeopleCount = hasExtraPeople ? numberOfPeople - MAX_INCLUDED_PEOPLE : 0;
-  const extraPeopleChargeUSD = hasExtraPeople ? extraPeopleCount * days * EXTRA_PERSON_PRICE_USD : 0;
+  const extraPeopleCount = useMemo(
+    () => Math.max(0, (numberOfPeople || 1) - MAX_INCLUDED_PEOPLE),
+    [numberOfPeople]
+  );
+  const extraPeopleChargeUSD = useMemo(
+    () => (days > 0 ? extraPeopleCount * days * EXTRA_PERSON_PRICE_USD : 0),
+    [days, extraPeopleCount]
+  );
+  const extraPeopleChargeBRL = useMemo(
+    () => extraPeopleChargeUSD * exchangeRate,
+    [extraPeopleChargeUSD, exchangeRate]
+  );
+
+  // IMPORTANT: to avoid relying on pricing.ts signature differences, we compute extras here
+  const baseUsdPrice = useMemo(() => getUSDPrice(days), [days]);
+  const usdPrice = useMemo(() => baseUsdPrice + extraPeopleChargeUSD, [baseUsdPrice, extraPeopleChargeUSD]);
+
+  const baseCashPrice = useMemo(() => getCashPrice(days, exchangeRate), [days, exchangeRate]);
+  const cashPrice = useMemo(() => baseCashPrice + extraPeopleChargeBRL, [baseCashPrice, extraPeopleChargeBRL]);
+
+  const installmentOptions = useMemo(() => {
+    const baseOptions = calculateInstallmentOptions(days, exchangeRate);
+    if (extraPeopleChargeBRL <= 0) return baseOptions;
+
+    return baseOptions.map((opt) => {
+      // Extra people should also be subject to the same card fee/interest rate
+      const adjustedTotal = opt.totalValue + extraPeopleChargeBRL * (1 + opt.rate);
+      return {
+        ...opt,
+        totalValue: adjustedTotal,
+        installmentValue: adjustedTotal / opt.installments,
+      };
+    });
+  }, [days, exchangeRate, extraPeopleChargeBRL]);
 
   if (days < 1) {
     return (
@@ -54,11 +81,11 @@ export function PaymentSelector({
   return (
     <div className="space-y-4">
       {/* Extra People Info */}
-      {hasExtraPeople && days > 0 && (
-        <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3 text-amber-700 dark:text-amber-400">
-          <span className="text-sm font-medium">
-            +{extraPeopleCount} pessoa{extraPeopleCount > 1 ? 's' : ''} extra = +${extraPeopleChargeUSD.toFixed(2)} USD ({extraPeopleCount} × {days} dias × $20)
-          </span>
+      {extraPeopleCount > 0 && (
+        <div className="rounded-lg bg-primary/5 border border-primary/20 px-4 py-3">
+          <p className="text-sm text-foreground">
+            +{extraPeopleCount} pessoa{extraPeopleCount > 1 ? "s" : ""} extra = +$ {extraPeopleChargeUSD.toFixed(2)} USD ({extraPeopleCount} × {days} dia{days > 1 ? "s" : ""} × $ {EXTRA_PERSON_PRICE_USD})
+          </p>
         </div>
       )}
       
@@ -116,7 +143,14 @@ export function PaymentSelector({
                   )}
                 >
                   <span>{d} dia{Number(d) > 1 ? 's' : ''}</span>
-                  <span className="font-medium">R$ {formatPriceBRL(price * (exchangeRate / 4.99))}</span>
+                    <span className="font-medium">
+                      R$ {formatPriceBRL(
+                        (price * (exchangeRate / 4.99)) +
+                          (extraPeopleCount > 0
+                            ? extraPeopleCount * Number(d) * EXTRA_PERSON_PRICE_USD * exchangeRate
+                            : 0)
+                      )}
+                    </span>
                 </div>
               ))}
             </div>
@@ -130,7 +164,14 @@ export function PaymentSelector({
                   )}
                 >
                   <span>{d} dias</span>
-                  <span className="font-medium">R$ {formatPriceBRL(price * (exchangeRate / 4.99))}</span>
+                    <span className="font-medium">
+                      R$ {formatPriceBRL(
+                        (price * (exchangeRate / 4.99)) +
+                          (extraPeopleCount > 0
+                            ? extraPeopleCount * Number(d) * EXTRA_PERSON_PRICE_USD * exchangeRate
+                            : 0)
+                      )}
+                    </span>
                 </div>
               ))}
             </div>

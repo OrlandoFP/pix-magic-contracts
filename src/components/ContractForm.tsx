@@ -223,13 +223,19 @@ export function ContractForm() {
     
     const days = datesLater ? 0 : parkSelections.length;
     if (days > 0) {
+      const extraPeopleCount = Math.max(0, numberOfPeople - 8);
+      const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
+
       if (paymentType === 'vista') {
-        const cashPrice = getCashPrice(days, exchangeRate, numberOfPeople);
-        setValue("valor", formatPriceBRL(cashPrice));
+        const baseCashPrice = getCashPrice(days, exchangeRate);
+        setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL));
       } else {
-        const options = calculateInstallmentOptions(days, exchangeRate, numberOfPeople);
+        const options = calculateInstallmentOptions(days, exchangeRate);
         const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
-        setValue("valor", formatPriceBRL(selectedOption.totalValue));
+
+        // O extra também entra no cálculo com a mesma taxa do cartão
+        const totalWithExtra = selectedOption.totalValue + (extraPeopleChargeBRL * (1 + selectedOption.rate));
+        setValue("valor", formatPriceBRL(totalWithExtra));
       }
     }
   }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, paymentType, selectedInstallment, numberOfPeople, setValue]);
@@ -717,13 +723,17 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                           setIsAutoPrice(true);
                           const days = datesLater ? 0 : parkSelections.length;
                           if (days > 0) {
+                            const extraPeopleCount = Math.max(0, numberOfPeople - 8);
+                            const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
+
                             if (paymentType === 'vista') {
-                              const cashPrice = getCashPrice(days, exchangeRate);
-                              setValue("valor", formatPriceBRL(cashPrice));
+                              const baseCashPrice = getCashPrice(days, exchangeRate);
+                              setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL));
                             } else {
                               const options = calculateInstallmentOptions(days, exchangeRate);
                               const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
-                              setValue("valor", formatPriceBRL(selectedOption.totalValue));
+                              const totalWithExtra = selectedOption.totalValue + (extraPeopleChargeBRL * (1 + selectedOption.rate));
+                              setValue("valor", formatPriceBRL(totalWithExtra));
                             }
                           }
                         }}
