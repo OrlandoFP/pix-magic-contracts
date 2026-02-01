@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle, ShoppingCart, Check, Users, CheckCircle2 } from "lucide-react";
+import { ChevronUp, ChevronDown, Pencil, Download, Trash2, Phone, Calendar, MapPin, Castle, MessageCircle, ShoppingCart, Check, Users, CheckCircle2, Copy, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { ShareContractButton } from "@/components/ShareContractButton";
+import { generatePassword } from "@/lib/password-generator";
 
 interface Contract {
   id: string;
@@ -173,63 +174,85 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
   const travelPeriod = getTravelPeriod();
 
+  // Generate deterministic password based on contract ID (same password every time for the same contract)
+  const getClientPassword = () => {
+    // Use contract.id as seed to generate consistent password
+    const seed = contract.id.replace(/-/g, '').slice(0, 8);
+    let password = '';
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    for (let i = 0; i < 10; i++) {
+      const charCode = parseInt(seed.slice(i % 8, (i % 8) + 2) || '0', 16);
+      password += chars[charCode % chars.length];
+    }
+    return password;
+  };
+
+  const clientPassword = getClientPassword();
+
+  const handleCopyCredentials = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const text = `Login: ${contract.email}\nSenha: ${clientPassword}`;
+    navigator.clipboard.writeText(text);
+    toast.success('Credenciais copiadas!');
+  };
+
   return (
     <Card className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}>
       {/* Header - always visible */}
       <div 
-        className="p-4 flex items-center gap-4 cursor-pointer"
+        className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Date badge */}
-        <div className="flex-shrink-0 bg-primary text-primary-foreground rounded-full w-14 h-14 flex flex-col items-center justify-center text-center">
-          <span className="text-[10px] opacity-80">{year}</span>
-          <span className="text-lg font-bold leading-none">{day}</span>
-          <span className="text-[10px] opacity-80">{month}</span>
+        <div className="flex-shrink-0 bg-primary text-primary-foreground rounded-full w-12 h-12 sm:w-14 sm:h-14 flex flex-col items-center justify-center text-center">
+          <span className="text-[9px] sm:text-[10px] opacity-80">{year}</span>
+          <span className="text-base sm:text-lg font-bold leading-none">{day}</span>
+          <span className="text-[9px] sm:text-[10px] opacity-80">{month}</span>
         </div>
 
         {/* Client info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground truncate">{contract.nome_completo}</h3>
+            <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{contract.nome_completo}</h3>
             {contract.hospede_disney && (
               <Castle className="h-4 w-4 text-blue-500 flex-shrink-0" />
             )}
           </div>
-          <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-            <span>{contract.nome_guia.toUpperCase()}</span>
+          <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 sm:gap-2 flex-wrap">
+            <span className="truncate">{contract.nome_guia.toUpperCase()}</span>
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />
-              {contract.quantidade_pessoas || 1} pessoas
+              {contract.quantidade_pessoas || 1}p
             </span>
-            <span>•</span>
-            <span>R$ {contract.valor}</span>
-          </p>
+            <span className="hidden xs:inline">•</span>
+            <span className="font-medium">R$ {contract.valor}</span>
+          </div>
         </div>
 
         {/* Status badges and expand button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {paymentReceiptUrl && (
-            <Badge className="bg-emerald-600 text-white hidden sm:inline-flex gap-1">
+            <Badge className="bg-emerald-600 text-white hidden sm:inline-flex gap-1 text-xs">
               <Check className="h-3 w-3" />
               Pago
             </Badge>
           )}
           {contract.accepted_at && (
-            <Badge className="bg-blue-600 text-white hidden sm:inline-flex gap-1">
+            <Badge className="bg-blue-600 text-white hidden sm:inline-flex gap-1 text-xs">
               <CheckCircle2 className="h-3 w-3" />
               Aceito
             </Badge>
           )}
           {isComprado && (
-            <Badge className="bg-green-600 text-white hidden sm:inline-flex gap-1">
+            <Badge className="bg-green-600 text-white hidden sm:inline-flex gap-1 text-xs">
               <Check className="h-3 w-3" />
               Comprado
             </Badge>
           )}
-          <Badge variant="outline" className="hidden sm:inline-flex">
+          <Badge variant="outline" className="hidden sm:inline-flex text-xs">
             {deadlineType}
           </Badge>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
@@ -237,48 +260,77 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
       {/* Expanded content */}
       {isExpanded && (
-        <CardContent className="pt-0 pb-6 px-4 border-t">
-          <div className="mt-4 space-y-4">
+        <CardContent className="pt-0 pb-4 sm:pb-6 px-3 sm:px-4 border-t">
+          <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
             {/* Info and actions row */}
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
               {/* Contact and period info */}
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-3 sm:space-y-4">
                 {/* Client info card */}
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
                     <div>
                       <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Nome do Cliente</p>
-                      <p className="font-medium">{contract.nome_completo}</p>
+                      <p className="font-medium text-sm sm:text-base break-words">{contract.nome_completo}</p>
                     </div>
                     <div>
                       <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Contato</p>
                       <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{contract.telefone}</span>
+                        <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base">{contract.telefone}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">{contract.email}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-all">{contract.email}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Credentials card */}
+                <div className="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-3 sm:p-4 border border-violet-200 dark:border-violet-900">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Key className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                      <p className="text-xs text-violet-600 dark:text-violet-400 font-semibold uppercase tracking-wide">Credenciais de Acesso</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-violet-600 hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:bg-violet-900/50"
+                      onClick={handleCopyCredentials}
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copiar
+                    </Button>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="text-xs text-muted-foreground">Login:</span>
+                      <span className="text-sm font-mono bg-white dark:bg-black/20 px-2 py-0.5 rounded break-all">{contract.email}</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                      <span className="text-xs text-muted-foreground">Senha:</span>
+                      <span className="text-sm font-mono bg-white dark:bg-black/20 px-2 py-0.5 rounded">{clientPassword}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Period card */}
-                <div className="bg-muted/50 rounded-lg p-4">
+                <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
                   <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-2">Período da Viagem</p>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{travelPeriod || 'Não definido'}</span>
+                    <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base">{travelPeriod || 'Não definido'}</span>
                   </div>
                 </div>
 
                 {/* Parks/Days card */}
                 {parkEntries.length > 0 && (
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-3">Parques / Dias</p>
+                  <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-2 sm:mb-3">Parques / Dias</p>
                     <div className="space-y-2">
                       {parkEntries.map((entry, index) => (
-                        <div key={index} className="flex items-center gap-3 bg-background rounded-md px-3 py-2 border">
-                          <span className="text-sm font-semibold text-primary min-w-[50px]">{entry.date}</span>
-                          <span className="text-sm">{entry.park}</span>
+                        <div key={index} className="flex items-center gap-2 sm:gap-3 bg-background rounded-md px-2 sm:px-3 py-2 border">
+                          <span className="text-xs sm:text-sm font-semibold text-primary min-w-[40px] sm:min-w-[50px]">{entry.date}</span>
+                          <span className="text-xs sm:text-sm break-words">{entry.park}</span>
                         </div>
                       ))}
                     </div>
@@ -286,9 +338,9 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                 )}
 
                 {/* Value card */}
-                <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
+                <div className="bg-primary/10 rounded-lg p-3 sm:p-4 border border-primary/20">
                   <p className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Valor Total</p>
-                  <p className="text-xl font-bold text-primary">R$ {contract.valor}</p>
+                  <p className="text-lg sm:text-xl font-bold text-primary">R$ {contract.valor}</p>
                 </div>
 
                 {/* Address */}
@@ -296,12 +348,12 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                   <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wide mb-1">Endereço</p>
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm">{contract.endereco} - CEP: {contract.cep}</p>
+                    <p className="text-xs sm:text-sm break-words">{contract.endereco} - CEP: {contract.cep}</p>
                   </div>
                 </div>
 
                 {/* Document uploads */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <DocumentUpload
                     contractId={contract.id}
                     label="Contrato Assinado"
@@ -320,10 +372,10 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
                 {/* Acceptance status */}
                 {contract.accepted_at && (
-                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900">
+                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 sm:p-4 border border-blue-200 dark:border-blue-900">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Contrato Aceito Digitalmente</p>
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
+                      <p className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400">Contrato Aceito Digitalmente</p>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Data: {new Date(contract.accepted_at).toLocaleString("pt-BR")}
@@ -334,7 +386,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                         <img 
                           src={contract.signature_url} 
                           alt="Assinatura do cliente" 
-                          className="h-16 bg-white rounded border"
+                          className="h-12 sm:h-16 bg-white rounded border"
                         />
                       </div>
                     )}
@@ -343,9 +395,10 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-row lg:flex-col gap-2 lg:w-44">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:w-40">
                 <Button
-                  className={`flex-1 lg:flex-none gap-2 justify-center ${
+                  size="sm"
+                  className={`gap-1.5 justify-center text-xs sm:text-sm ${
                     isComprado 
                       ? 'bg-green-600 hover:bg-green-700 text-white' 
                       : 'bg-amber-500 hover:bg-amber-600 text-white'
@@ -353,36 +406,39 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                   onClick={handleToggleComprado}
                   disabled={isUpdating}
                 >
-                  {isComprado ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
-                  {isComprado ? 'Comprado' : 'Comprar'}
+                  {isComprado ? <Check className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
+                  <span className="truncate">{isComprado ? 'Comprado' : 'Comprar'}</span>
                 </Button>
                 <Button
-                  className="flex-1 lg:flex-none gap-2 justify-center bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                  className="gap-1.5 justify-center bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
                   onClick={handleWhatsApp}
                 >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  <span className="truncate">WhatsApp</span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1 lg:flex-none gap-2 justify-center"
+                  size="sm"
+                  className="gap-1.5 justify-center text-xs sm:text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit(contract);
                   }}
                 >
-                  <Pencil className="h-4 w-4" />
-                  Editar
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span className="truncate">Editar</span>
                 </Button>
                 <Button
-                  className="flex-1 lg:flex-none gap-2 justify-center"
+                  size="sm"
+                  className="gap-1.5 justify-center text-xs sm:text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDownload();
                   }}
                 >
-                  <Download className="h-4 w-4" />
-                  Baixar PDF
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="truncate">PDF</span>
                 </Button>
                 <ShareContractButton
                   contractId={contract.id}
@@ -392,14 +448,15 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                 />
                 <Button
                   variant="outline"
-                  className="flex-1 lg:flex-none gap-2 justify-center text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+                  size="sm"
+                  className="gap-1.5 justify-center text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10 text-xs sm:text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(contract);
                   }}
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Remover
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span className="truncate">Remover</span>
                 </Button>
               </div>
             </div>
