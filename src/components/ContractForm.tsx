@@ -190,6 +190,9 @@ export function ContractForm() {
       parks: parks
     };
 
+    console.log("=== WEBHOOK PAYLOAD ENVIADO ===");
+    console.log("Payload completo:", JSON.stringify(payload, null, 2));
+
     try {
       const response = await fetch(webhookUrl, {
         method: "POST",
