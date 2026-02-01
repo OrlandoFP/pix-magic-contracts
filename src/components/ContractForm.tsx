@@ -163,15 +163,30 @@ export function ContractForm() {
       }));
 
     const payload = {
+      // Credenciais de acesso
       email: credentials.email,
       password: credentials.password,
+      
+      // Dados pessoais completos
       nome_completo: credentials.nome_completo,
       cpf: credentials.cpf,
       telefone: credentials.telefone,
+      endereco: formData.endereco,
+      cep: formData.cep,
+      
+      // Dados do contrato
       contract_id: credentials.contract_id,
       nome_guia: formData.nomeGuia,
+      valor: formData.valor,
+      quantidade_pessoas: formData.quantidadePessoas || 1,
+      quantidade_dias: parkSelectionsData.filter(p => p.date).length,
+      hospede_disney: formData.hospedeDisney || false,
+      
+      // Datas da viagem
       start_date: startDate,
       end_date: endDate,
+      
+      // Parques detalhados
       parks: parks
     };
 
