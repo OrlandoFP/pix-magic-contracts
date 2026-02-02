@@ -74,6 +74,7 @@ export function ContractForm() {
   // URL fixa do webhook do projeto Seu Roteiro Orlando
   const webhookUrl = "https://qjfhyqjgqutkabxaeopi.supabase.co/functions/v1/create-client";
   const [generatedCredentials, setGeneratedCredentials] = useState<UserCredentials | null>(null);
+  const [webhookEnabled, setWebhookEnabled] = useState(true); // Toggle para pausar/ativar webhook
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -133,8 +134,8 @@ export function ContractForm() {
     parkSelectionsData: ParkSelection[],
     formData: ContractFormData
   ) => {
-    if (!webhookUrl.trim()) {
-      console.log("No webhook URL configured, skipping...");
+    if (!webhookUrl.trim() || !webhookEnabled) {
+      console.log("Webhook disabled or no URL configured, skipping...");
       return;
     }
 
@@ -441,17 +442,17 @@ export function ContractForm() {
       
       setGeneratedCredentials(credentials);
       
-      // Send credentials to webhook if URL is configured
-      if (webhookUrl.trim()) {
+      // Send credentials to webhook if URL is configured and enabled
+      if (webhookUrl.trim() && webhookEnabled) {
         await sendCredentialsToWebhook(credentials, parkSelections, data);
       }
       
       setIsGenerated(true);
       toast({
         title: "Contrato gerado com sucesso!",
-        description: webhookUrl.trim() 
-          ? "O contrato foi salvo e as credenciais foram enviadas." 
-          : "O contrato foi salvo e o link de aceite já está pronto.",
+        description: webhookEnabled 
+          ? "O contrato foi salvo e as credenciais foram enviadas para o Planejador OFP." 
+          : "O contrato foi salvo. Integração com Planejador OFP está pausada.",
       });
     } catch (error) {
       console.error("Contract generation error:", error);
@@ -839,6 +840,32 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                 id="hospedeDisney"
                 checked={hospedeDisney}
                 onCheckedChange={(checked) => setValue("hospedeDisney", checked)}
+              />
+            </div>
+          </div>
+
+          {/* Webhook Integration Toggle */}
+          <div className="rounded-lg border p-4 bg-muted/30">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${webhookEnabled ? 'bg-green-500/10' : 'bg-gray-500/10'}`}>
+                  <ExternalLink className={`h-5 w-5 ${webhookEnabled ? 'text-green-600' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <Label htmlFor="webhookEnabled" className="text-base font-medium cursor-pointer">
+                    Integração Planejador OFP
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {webhookEnabled 
+                      ? "Envia credenciais automaticamente para Seu Roteiro Orlando" 
+                      : "Integração pausada - credenciais não serão enviadas"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="webhookEnabled"
+                checked={webhookEnabled}
+                onCheckedChange={setWebhookEnabled}
               />
             </div>
           </div>
