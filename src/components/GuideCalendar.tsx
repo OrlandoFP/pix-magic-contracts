@@ -10,6 +10,7 @@ import { format, isValid, subDays, isAfter, isBefore, addDays, startOfMonth, end
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DraggableCalendar } from "./DraggableCalendar";
 
 interface Contract {
   id: string;
@@ -380,140 +381,12 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
         </Card>
       )}
 
-      {/* Calendar - Full Width */}
-      <Card>
-        <CardHeader className="pb-2 px-3 sm:px-6">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            Agenda de {guideName}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-2 sm:px-6">
-          <div className="rounded-md border p-2 sm:p-3 overflow-x-auto">
-            {/* Calendar Header */}
-            <div className="flex justify-between items-center mb-3 sm:mb-4 min-w-[280px]">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 sm:h-8 sm:w-8"
-                onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm sm:text-base font-medium capitalize">
-                {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7 sm:h-8 sm:w-8"
-                onClick={() => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Day names */}
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1 sm:mb-2 min-w-[280px]">
-              {["D", "S", "T", "Q", "Q", "S", "S"].map((day, idx) => (
-                <div key={idx} className="text-center text-[10px] sm:text-xs text-muted-foreground font-medium py-1">
-                  <span className="sm:hidden">{day}</span>
-                  <span className="hidden sm:inline">{["dom", "seg", "ter", "qua", "qui", "sex", "sab"][idx]}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
-              {(() => {
-                const monthStart = startOfMonth(currentMonth);
-                const monthEnd = endOfMonth(currentMonth);
-                const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-                const startDayOfWeek = getDay(monthStart);
-                
-                const cells = [];
-                
-                // Empty cells for days before month starts
-                for (let i = 0; i < startDayOfWeek; i++) {
-                  cells.push(<div key={`empty-${i}`} className="min-h-[50px] sm:min-h-[80px]" />);
-                }
-                
-                // Actual day cells
-                days.forEach((day) => {
-                  const dayEvents = scheduledEvents.filter((e) => isSameDay(e.date, day));
-                  const hasEvents = dayEvents.length > 0;
-                  
-                  cells.push(
-                    <Popover key={day.toISOString()}>
-                      <PopoverTrigger asChild>
-                        <div
-                          className={`min-h-[50px] sm:min-h-[80px] rounded-md border p-0.5 sm:p-1 cursor-pointer hover:bg-muted/50 transition-colors ${
-                            hasEvents ? "bg-muted/30 border-primary/30" : "border-transparent"
-                          }`}
-                        >
-                          <div className={`text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1 ${hasEvents ? "text-primary" : "text-muted-foreground"}`}>
-                            {format(day, "d")}
-                          </div>
-                          {hasEvents && (
-                            <div className="space-y-0.5">
-                              {dayEvents.map((event, idx) => (
-                                <button
-                                  key={idx}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEventClick(event.contractId);
-                                  }}
-                                  className={`w-full text-left rounded px-0.5 sm:px-1 py-0.5 text-[8px] sm:text-[10px] leading-tight hover:opacity-80 transition-opacity cursor-pointer ${
-                                    event.hospedeDisney 
-                                      ? "bg-amber-400 text-amber-900" 
-                                      : "bg-primary text-primary-foreground"
-                                  }`}
-                                  title={`${event.clientName} - ${event.park}`}
-                                >
-                                  <span className="font-medium truncate block">{event.clientName.split(' ')[0]}</span>
-                                  <span className="truncate block opacity-80 text-[7px] sm:text-[9px]">{event.park}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </PopoverTrigger>
-                      {hasEvents && (
-                        <PopoverContent className="w-64 p-2" align="start">
-                          <div className="space-y-2">
-                            <p className="text-xs font-semibold text-muted-foreground">
-                              {format(day, "dd 'de' MMMM", { locale: ptBR })}
-                            </p>
-                            {dayEvents.map((event, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => handleEventClick(event.contractId)}
-                                className={`w-full text-left rounded-md p-2 text-xs hover:opacity-90 transition-opacity ${
-                                  event.hospedeDisney 
-                                    ? "bg-amber-100 dark:bg-amber-900/30 border border-amber-300" 
-                                    : "bg-primary/10 border border-primary/30"
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{event.clientName}</span>
-                                  {event.hospedeDisney && <Castle className="h-3 w-3 text-amber-600" />}
-                                </div>
-                                <span className="text-muted-foreground">{event.park}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      )}
-                    </Popover>
-                  );
-                });
-                
-                return cells;
-              })()}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Calendar - Full Width with Drag-and-Drop */}
+      <DraggableCalendar 
+        contracts={contracts} 
+        guideName={guideName} 
+        onEventClick={handleEventClick}
+      />
       
       {/* Upcoming Events - Full Width Below */}
       <Card>
