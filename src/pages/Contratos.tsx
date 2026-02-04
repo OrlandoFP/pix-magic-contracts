@@ -374,6 +374,10 @@ const Contratos = () => {
         contract={selectedContract}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
+        onSuccess={() => {
+          // Força refresh dos contratos após edição
+          setSelectedContract(null);
+        }}
       />
 
       <ContractDeleteDialog

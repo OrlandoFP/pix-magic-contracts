@@ -227,7 +227,6 @@ export function ContractForm() {
 
   // Watch quantidadePessoas for pricing
   const quantidadePessoas = watch("quantidadePessoas");
-  const numberOfPeople = parseInt(quantidadePessoas || "1") || 1;
 
   // Auto-calculate price based on park selections, exchange rate, and selected installment
   const handleInstallmentSelect = (installments: number, totalValue: number) => {
@@ -241,6 +240,8 @@ export function ContractForm() {
     if (!isAutoPrice) return;
     
     const days = datesLater ? 0 : parkSelections.length;
+    const numberOfPeople = parseInt(quantidadePessoas || "1") || 1;
+    
     if (days > 0) {
       const extraPeopleCount = Math.max(0, numberOfPeople - 8);
       const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
@@ -257,7 +258,10 @@ export function ContractForm() {
         setValue("valor", formatPriceBRL(totalWithExtra));
       }
     }
-  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, paymentType, selectedInstallment, numberOfPeople, setValue]);
+  }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, paymentType, selectedInstallment, quantidadePessoas, setValue]);
+  
+  // Número de pessoas para outros componentes
+  const numberOfPeople = parseInt(quantidadePessoas || "1") || 1;
 
   const hospedeDisney = watch("hospedeDisney");
 
