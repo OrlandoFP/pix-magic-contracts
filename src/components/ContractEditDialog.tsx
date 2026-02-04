@@ -87,6 +87,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
 
   // Parse datas_requeridas when contract changes
   useEffect(() => {
+    if (!open) return;
     if (contract) {
       if (contract.datas_requeridas === "Datas a definir") {
         setDatesLater(true);
@@ -96,7 +97,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
         setParkSelections(parseDatasRequeridas(contract.datas_requeridas));
       }
     }
-  }, [contract]);
+  }, [open, contract?.id, contract?.datas_requeridas]);
 
   const formValues = useMemo<ContractFormData | undefined>(() => {
     if (!contract) return undefined;
@@ -142,10 +143,13 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     },
   });
 
-  // Reset form when a new contract is selected/opened
+  // Reset form only when dialog opens (or when switching the selected contract)
+  // Avoid using `formValues` in deps to prevent re-render loops.
   useEffect(() => {
-    if (formValues) reset(formValues);
-  }, [formValues, reset]);
+    if (!open) return;
+    if (!formValues) return;
+    reset(formValues);
+  }, [open, contract?.id, reset]);
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
