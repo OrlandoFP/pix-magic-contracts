@@ -121,10 +121,31 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     formState: { errors },
     setValue,
     watch,
+    reset,
   } = useForm<ContractFormData>({
     resolver: zodResolver(contractFormSchema),
-    values: formValues,
+    // IMPORTANT: do NOT pass `values` here.
+    // `values` turns the form into a fully controlled form and will freeze inputs
+    // unless you keep feeding updated values on every keystroke.
+    defaultValues: {
+      nomeCompleto: "",
+      cpf: "",
+      email: "",
+      telefone: "",
+      endereco: "",
+      cep: "",
+      nomeGuia: "Rafael",
+      valor: "",
+      datasRequeridas: "Datas a definir",
+      quantidadePessoas: "1",
+      hospedeDisney: false,
+    },
   });
+
+  // Reset form when a new contract is selected/opened
+  useEffect(() => {
+    if (formValues) reset(formValues);
+  }, [formValues, reset]);
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
@@ -317,7 +338,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
             <div className="space-y-2">
               <Label htmlFor="edit-nomeGuia">Guia</Label>
               <Select 
-                defaultValue={contract?.nome_guia}
+                value={watch("nomeGuia") || "Rafael"}
                 onValueChange={(value) => setValue("nomeGuia", value)}
               >
                 <SelectTrigger id="edit-nomeGuia">
