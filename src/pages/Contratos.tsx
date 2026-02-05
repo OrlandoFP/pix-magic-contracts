@@ -39,8 +39,11 @@ type StatusFilter = "all" | "pending" | "accepted" | "paid" | "purchased";
 
 const Contratos = () => {
   const { guia } = useParams<{ guia: string }>();
-  const selectedGuide = guia?.toLowerCase() as "rafael" | "kleber";
-  const guideName = selectedGuide === "rafael" ? "Rafael" : "Kleber";
+  const guiaParam = guia?.toLowerCase();
+  const selectedGuide: "rafael" | "kleber" | null =
+    guiaParam === "rafael" || guiaParam === "kleber" ? guiaParam : null;
+  const guideName =
+    selectedGuide === "rafael" ? "Rafael" : selectedGuide === "kleber" ? "Kleber" : "Guia";
   
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -208,7 +211,41 @@ const Contratos = () => {
     );
   };
 
-  return (
+  return !selectedGuide ? (
+    <div className="min-h-screen bg-background">
+      <header className="gradient-hero text-primary-foreground py-8">
+        <div className="container mx-auto px-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground mb-4 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Link>
+          <h1 className="font-display text-3xl md:text-4xl font-bold">Contratos</h1>
+          <p className="text-primary-foreground/80 mt-2">
+            Rota inválida (ex.: /contratos/:guia). Selecione um guia para visualizar contratos e agenda.
+          </p>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Escolha o guia</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col sm:flex-row gap-3">
+            <Button asChild>
+              <Link to="/contratos/kleber">Kleber</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link to="/contratos/rafael">Rafael</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  ) : (
     <div className="min-h-screen bg-background">
       <header className="gradient-hero text-primary-foreground py-8">
         <div className="container mx-auto px-4">
