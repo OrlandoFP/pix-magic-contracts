@@ -410,29 +410,28 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                   {isComprado ? <Check className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
                   <span className="truncate">{isComprado ? 'Comprado' : 'Comprar'}</span>
                 </Button>
-                <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  className="gap-1.5 justify-center bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                  onClick={handleWhatsApp}
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  <span className="truncate">WhatsApp</span>
+                </Button>
+                {contract.umbler_chat_url && (
                   <Button
                     size="sm"
-                    className="gap-1.5 justify-center bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm flex-1"
-                    onClick={handleWhatsApp}
+                    className="gap-1.5 justify-center bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(contract.umbler_chat_url!, '_blank');
+                    }}
+                    title="Abrir chat Umbler"
                   >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    <span className="truncate">WhatsApp</span>
+                    <Headset className="h-3.5 w-3.5" />
+                    <span className="truncate">Umbler</span>
                   </Button>
-                  {contract.umbler_chat_url && (
-                    <Button
-                      size="sm"
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(contract.umbler_chat_url!, '_blank');
-                      }}
-                      title="Abrir chat Umbler"
-                    >
-                      <Headset className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
