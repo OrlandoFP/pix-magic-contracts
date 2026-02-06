@@ -396,69 +396,69 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
               </div>
 
               {/* Action buttons */}
-              <div className="flex flex-col gap-2 lg:w-auto">
+              <div className="flex flex-col gap-2">
                 {/* Row 1: Comprar + WhatsApp + Umbler */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
-                    size="icon"
-                    className={`h-10 w-10 sm:h-12 sm:w-12 rounded-xl ${
+                    size="sm"
+                    className={`gap-1.5 h-9 px-3 rounded-lg ${
                       isComprado 
                         ? 'bg-green-600 hover:bg-green-700 text-white' 
                         : 'bg-amber-500 hover:bg-amber-600 text-white'
                     }`}
                     onClick={handleToggleComprado}
                     disabled={isUpdating}
-                    title={isComprado ? 'Comprado' : 'Comprar'}
                   >
-                    {isComprado ? <Check className="h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
+                    {isComprado ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+                    {isComprado ? 'Comprado' : 'Comprar'}
                   </Button>
                   <Button
-                    size="icon"
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-green-600 hover:bg-green-700 text-white"
+                    size="sm"
+                    className="gap-1.5 h-9 px-3 rounded-lg bg-green-600 hover:bg-green-700 text-white"
                     onClick={handleWhatsApp}
-                    title="WhatsApp"
                   >
-                    <MessageCircle className="h-5 w-5" />
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
                   </Button>
                   {contract.umbler_chat_url && (
                     <Button
-                      size="icon"
-                      className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-purple-600 hover:bg-purple-700 text-white"
+                      size="sm"
+                      className="gap-1.5 h-9 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white"
                       onClick={(e) => {
                         e.stopPropagation();
                         window.open(contract.umbler_chat_url!, '_blank');
                       }}
-                      title="Abrir chat Umbler"
                     >
-                      <Headset className="h-5 w-5" />
+                      <Headset className="h-4 w-4" />
+                      Umbler
                     </Button>
                   )}
                 </div>
 
                 {/* Row 2: Editar + PDF + Compartilhar + Remover */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl"
+                    size="sm"
+                    className="gap-1.5 h-9 px-3 rounded-lg"
                     onClick={(e) => {
                       e.stopPropagation();
                       onEdit(contract);
                     }}
-                    title="Editar"
                   >
-                    <Pencil className="h-5 w-5" />
+                    <Pencil className="h-4 w-4" />
+                    Editar
                   </Button>
                   <Button
-                    size="icon"
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl"
+                    size="sm"
+                    className="gap-1.5 h-9 px-3 rounded-lg"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDownload();
                     }}
-                    title="Baixar PDF"
                   >
-                    <Download className="h-5 w-5" />
+                    <Download className="h-4 w-4" />
+                    PDF
                   </Button>
                   <ShareContractButton
                     contractId={contract.id}
@@ -468,15 +468,15 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
                   />
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+                    size="sm"
+                    className="gap-1.5 h-9 px-3 rounded-lg text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(contract);
                     }}
-                    title="Remover"
                   >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-4 w-4" />
+                    Remover
                   </Button>
                 </div>
               </div>
