@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, ChevronLeft, ChevronRight, Filter, Headset } from "lucide-react";
 import { format, isValid, subDays, isAfter, isBefore, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +26,7 @@ interface Contract {
   valor: string;
   hospede_disney?: boolean;
   comprado?: boolean;
+  umbler_chat_url?: string | null;
 }
 
 interface ScheduledEvent {
@@ -53,6 +54,7 @@ interface MultipassReminder {
   daysUntilBuy: number;
   comprado: boolean;
   datasRequeridas: string;
+  umblerChatUrl?: string | null;
 }
 
 interface GuideCalendarProps {
@@ -157,6 +159,7 @@ function calculateMultipassReminders(contracts: Contract[]): MultipassReminder[]
           hospedeDisney,
           daysUntilBuy,
           comprado: contract.comprado ?? false,
+          umblerChatUrl: contract.umbler_chat_url,
         });
       }
     }
@@ -373,6 +376,16 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                       <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">WhatsApp</span>
                     </Button>
+                    {reminder.umblerChatUrl && (
+                      <Button
+                        size="sm"
+                        className="gap-1 h-8 sm:h-9 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3"
+                        onClick={() => window.open(reminder.umblerChatUrl!, '_blank')}
+                        title="Abrir chat Umbler"
+                      >
+                        <Headset className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
