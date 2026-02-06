@@ -697,8 +697,19 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                 </div>
               </div>
 
-              {/* Action button */}
-              <div className="flex gap-2 pt-2">
+              {/* Action buttons */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => {
+                    setSelectedContract(null);
+                    handleOpenEditDialog(selectedContract.id);
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Editar
+                </Button>
                 <Button
                   className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => handleWhatsApp(selectedContract.telefone, selectedContract.nome_completo)}
@@ -706,6 +717,27 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                   <MessageCircle className="h-4 w-4" />
                   WhatsApp
                 </Button>
+                {selectedContract.umbler_chat_url ? (
+                  <Button
+                    className="flex-1 gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                    onClick={() => window.open(selectedContract.umbler_chat_url!, '_blank')}
+                  >
+                    <Headset className="h-4 w-4" />
+                    Umbler
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2 text-purple-600 border-purple-300 hover:bg-purple-50"
+                    onClick={() => {
+                      setSelectedContract(null);
+                      handleOpenEditDialog(selectedContract.id);
+                    }}
+                  >
+                    <Headset className="h-4 w-4" />
+                    + Umbler
+                  </Button>
+                )}
               </div>
             </div>
           )}
