@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          contract_terms: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          contract_terms: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          contract_terms?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           acceptance_token: string | null
