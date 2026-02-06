@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Headset } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ interface Contract {
   valor: string;
   hospede_disney: boolean;
   created_at: string;
+  umbler_chat_url?: string | null;
 }
 
 interface ContractEditDialogProps {
@@ -83,9 +84,10 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
   const [isSaving, setIsSaving] = useState(false);
   const [parkSelections, setParkSelections] = useState<ParkSelection[]>([]);
   const [datesLater, setDatesLater] = useState(false);
+  const [umblerChatUrl, setUmblerChatUrl] = useState("");
   const { toast } = useToast();
 
-  // Parse datas_requeridas when contract changes
+  // Parse datas_requeridas and umbler_chat_url when contract changes
   useEffect(() => {
     if (!open) return;
     if (contract) {
@@ -96,8 +98,9 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
         setDatesLater(false);
         setParkSelections(parseDatasRequeridas(contract.datas_requeridas));
       }
+      setUmblerChatUrl(contract.umbler_chat_url || "");
     }
-  }, [open, contract?.id, contract?.datas_requeridas]);
+  }, [open, contract?.id, contract?.datas_requeridas, contract?.umbler_chat_url]);
 
   const formValues = useMemo<ContractFormData | undefined>(() => {
     if (!contract) return undefined;
@@ -192,6 +195,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           quantidade_dias: quantidadeDias,
           quantidade_pessoas: quantidadePessoas,
           hospede_disney: data.hospedeDisney,
+          umbler_chat_url: umblerChatUrl.trim() || null,
         })
         .eq("id", contract.id);
 
@@ -400,6 +404,24 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
                 datesLater={datesLater}
                 onDatesLaterChange={setDatesLater}
               />
+            </div>
+
+            {/* Umbler Chat URL Field */}
+            <div className="md:col-span-2 space-y-2">
+              <div className="flex items-center gap-2">
+                <Headset className="h-4 w-4 text-purple-600" />
+                <Label htmlFor="edit-umblerChatUrl">Link Umbler (interno)</Label>
+              </div>
+              <Input
+                id="edit-umblerChatUrl"
+                type="url"
+                placeholder="https://app-utalk.umbler.com/chats/..."
+                value={umblerChatUrl}
+                onChange={(e) => setUmblerChatUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Link do chat do cliente na Umbler. Não é visível para o cliente.
+              </p>
             </div>
           </div>
 
