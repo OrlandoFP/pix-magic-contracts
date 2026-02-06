@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, ChevronLeft, ChevronRight, Filter, Headset } from "lucide-react";
+import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, ChevronLeft, ChevronRight, Filter, Headset, Pencil } from "lucide-react";
 import { format, isValid, subDays, isAfter, isBefore, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DraggableCalendar } from "./DraggableCalendar";
+import { ContractEditDialog } from "./ContractEditDialog";
 
 interface Contract {
   id: string;
@@ -177,6 +178,17 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [eventFilter, setEventFilter] = useState<EventFilter>("current-month");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [contractToEdit, setContractToEdit] = useState<Contract | null>(null);
+
+  // Function to open edit dialog for a contract
+  const handleOpenEditDialog = (contractId: string) => {
+    const contract = contracts.find(c => c.id === contractId);
+    if (contract) {
+      setContractToEdit(contract);
+      setEditDialogOpen(true);
+    }
+  };
 
   const handleEventClick = (contractId: string) => {
     const contract = contracts.find(c => c.id === contractId);
@@ -311,10 +323,20 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                       <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                         <button 
                           className="font-medium truncate text-left hover:text-primary hover:underline cursor-pointer transition-colors text-sm sm:text-base"
-                          onClick={() => setSelectedReminder(reminder)}
+                          onClick={() => handleOpenEditDialog(reminder.contractId)}
+                          title="Clique para editar"
                         >
                           {reminder.clientName}
                         </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-primary"
+                          onClick={() => handleOpenEditDialog(reminder.contractId)}
+                          title="Editar contrato"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
                         {isComprado(reminder) && (
                           <Badge className="bg-green-600 text-white text-[10px] sm:text-xs gap-1">
                             <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
@@ -376,14 +398,25 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
                       <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="hidden sm:inline">WhatsApp</span>
                     </Button>
-                    {reminder.umblerChatUrl && (
+                    {reminder.umblerChatUrl ? (
                       <Button
                         size="sm"
-                        className="gap-1 h-8 sm:h-9 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3"
+                        className="gap-1 flex-1 sm:flex-initial h-8 sm:h-9 text-xs sm:text-sm bg-purple-600 hover:bg-purple-700 text-white"
                         onClick={() => window.open(reminder.umblerChatUrl!, '_blank')}
-                        title="Abrir chat Umbler"
                       >
                         <Headset className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Umbler</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 flex-1 sm:flex-initial h-8 sm:h-9 text-xs sm:text-sm text-purple-600 border-purple-300 hover:bg-purple-50"
+                        onClick={() => handleOpenEditDialog(reminder.contractId)}
+                        title="Adicionar link Umbler"
+                      >
+                        <Headset className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">+ Umbler</span>
                       </Button>
                     )}
                   </div>
@@ -678,6 +711,34 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Contract Dialog */}
+      <ContractEditDialog
+        contract={contractToEdit ? {
+          id: contractToEdit.id,
+          nome_completo: contractToEdit.nome_completo,
+          cpf: contractToEdit.cpf,
+          email: contractToEdit.email,
+          telefone: contractToEdit.telefone,
+          endereco: contractToEdit.endereco,
+          cep: contractToEdit.cep,
+          datas_requeridas: contractToEdit.datas_requeridas,
+          nome_guia: contractToEdit.nome_guia,
+          quantidade_dias: contractToEdit.quantidade_dias,
+          quantidade_pessoas: null,
+          valor: contractToEdit.valor,
+          hospede_disney: contractToEdit.hospede_disney || false,
+          created_at: "",
+          umbler_chat_url: contractToEdit.umbler_chat_url,
+        } : null}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={() => {
+          setEditDialogOpen(false);
+          // Trigger a page refresh to reload data
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }
