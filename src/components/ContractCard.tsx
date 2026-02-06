@@ -396,83 +396,92 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
               </div>
 
               {/* Action buttons */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:w-40">
-                <Button
-                  size="sm"
-                  className={`gap-1.5 justify-center text-xs sm:text-sm ${
-                    isComprado 
-                      ? 'bg-green-600 hover:bg-green-700 text-white' 
-                      : 'bg-amber-500 hover:bg-amber-600 text-white'
-                  }`}
-                  onClick={handleToggleComprado}
-                  disabled={isUpdating}
-                >
-                  {isComprado ? <Check className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
-                  <span className="truncate">{isComprado ? 'Comprado' : 'Comprar'}</span>
-                </Button>
-                <Button
-                  size="sm"
-                  className="gap-1.5 justify-center bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
-                  onClick={handleWhatsApp}
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  <span className="truncate">WhatsApp</span>
-                </Button>
-                {contract.umbler_chat_url && (
+              <div className="flex flex-col gap-2 lg:w-40">
+                {/* Row 1: Comprar + WhatsApp + Umbler */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <Button
                     size="sm"
-                    className="gap-1.5 justify-center bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm"
+                    className={`gap-1.5 justify-center text-xs sm:text-sm ${
+                      isComprado 
+                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                        : 'bg-amber-500 hover:bg-amber-600 text-white'
+                    }`}
+                    onClick={handleToggleComprado}
+                    disabled={isUpdating}
+                  >
+                    {isComprado ? <Check className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
+                    <span className="truncate">{isComprado ? 'Comprado' : 'Comprar'}</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 justify-center bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                    onClick={handleWhatsApp}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    <span className="truncate">WhatsApp</span>
+                  </Button>
+                  {contract.umbler_chat_url ? (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 justify-center bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(contract.umbler_chat_url!, '_blank');
+                      }}
+                      title="Abrir chat Umbler"
+                    >
+                      <Headset className="h-3.5 w-3.5" />
+                      <span className="truncate">Umbler</span>
+                    </Button>
+                  ) : (
+                    <div className="hidden sm:block" /> 
+                  )}
+                </div>
+
+                {/* Row 2: Editar + PDF + Compartilhar + Remover */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 justify-center text-xs sm:text-sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(contract.umbler_chat_url!, '_blank');
+                      onEdit(contract);
                     }}
-                    title="Abrir chat Umbler"
                   >
-                    <Headset className="h-3.5 w-3.5" />
-                    <span className="truncate">Umbler</span>
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span className="truncate">Editar</span>
                   </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 justify-center text-xs sm:text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(contract);
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span className="truncate">Editar</span>
-                </Button>
-                <Button
-                  size="sm"
-                  className="gap-1.5 justify-center text-xs sm:text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownload();
-                  }}
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="truncate">PDF</span>
-                </Button>
-                <ShareContractButton
-                  contractId={contract.id}
-                  clientName={contract.nome_completo}
-                  clientPhone={contract.telefone}
-                  existingToken={contract.acceptance_token}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 justify-center text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10 text-xs sm:text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(contract);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span className="truncate">Remover</span>
-                </Button>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 justify-center text-xs sm:text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload();
+                    }}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="truncate">PDF</span>
+                  </Button>
+                  <ShareContractButton
+                    contractId={contract.id}
+                    clientName={contract.nome_completo}
+                    clientPhone={contract.telefone}
+                    existingToken={contract.acceptance_token}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 justify-center text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10 text-xs sm:text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(contract);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span className="truncate">Remover</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
