@@ -38,6 +38,7 @@ export type Database = {
           signature_url: string | null
           signed_contract_url: string | null
           telefone: string
+          umbler_chat_url: string | null
           valor: string
         }
         Insert: {
@@ -63,6 +64,7 @@ export type Database = {
           signature_url?: string | null
           signed_contract_url?: string | null
           telefone: string
+          umbler_chat_url?: string | null
           valor: string
         }
         Update: {
@@ -88,6 +90,7 @@ export type Database = {
           signature_url?: string | null
           signed_contract_url?: string | null
           telefone?: string
+          umbler_chat_url?: string | null
           valor?: string
         }
         Relationships: []

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon, Plus, DollarSign, RefreshCw, Key, ExternalLink } from "lucide-react";
+import { FileText, User, Calendar, Users, Loader2, CheckCircle, Sparkles, Wand2, UserCheck, Castle, Copy, Check, MessageSquare, MessageCircle, Link as LinkIcon, Plus, DollarSign, RefreshCw, Key, ExternalLink, Headset } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ export function ContractForm() {
   const [datesLater, setDatesLater] = useState(false);
   const [copied, setCopied] = useState(false);
   const [observacao, setObservacao] = useState("");
+  const [umblerChatUrl, setUmblerChatUrl] = useState("");
   const [customTerms, setCustomTerms] = useState<string | undefined>(undefined);
   const [savedContractId, setSavedContractId] = useState<string | null>(null);
   const [acceptanceToken, setAcceptanceToken] = useState<string | null>(null);
@@ -115,6 +116,7 @@ export function ContractForm() {
     setParkSelections([]);
     setRawData("");
     setObservacao("");
+    setUmblerChatUrl("");
     setCustomTerms(undefined);
     setIsGenerated(false);
     setSavedContractId(null);
@@ -399,6 +401,7 @@ export function ContractForm() {
         valor: data.valor,
         hospede_disney: data.hospedeDisney,
         acceptance_token: newToken,
+        umbler_chat_url: umblerChatUrl.trim() || null,
       }]).select("id").single();
 
       if (dbError) {
@@ -872,6 +875,24 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                 onCheckedChange={setWebhookEnabled}
               />
             </div>
+          </div>
+
+          {/* Umbler Chat URL Field (Internal - not visible to client) */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Headset className="h-4 w-4 text-purple-600" />
+              <Label htmlFor="umblerChatUrl">Link Umbler (interno)</Label>
+            </div>
+            <Input
+              id="umblerChatUrl"
+              type="url"
+              placeholder="https://app-utalk.umbler.com/chats/..."
+              value={umblerChatUrl}
+              onChange={(e) => setUmblerChatUrl(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Link do chat do cliente na Umbler. Não é visível para o cliente.
+            </p>
           </div>
 
           {/* Observação Field */}
