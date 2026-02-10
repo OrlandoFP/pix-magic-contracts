@@ -69,6 +69,7 @@ export function ContractForm() {
   const [acceptanceToken, setAcceptanceToken] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(DEFAULT_EXCHANGE_RATE);
+  const [exchangeRateInput, setExchangeRateInput] = useState(String(DEFAULT_EXCHANGE_RATE));
   const [isAutoPrice, setIsAutoPrice] = useState(true);
   const [paymentType, setPaymentType] = useState<PaymentType>('vista');
   const [selectedInstallment, setSelectedInstallment] = useState(0); // 0 = à vista
@@ -124,6 +125,7 @@ export function ContractForm() {
     setLinkCopied(false);
     setDatesLater(false);
     setExchangeRate(DEFAULT_EXCHANGE_RATE);
+    setExchangeRateInput(String(DEFAULT_EXCHANGE_RATE));
     setIsAutoPrice(true);
     setPaymentType('vista');
     setSelectedInstallment(0);
@@ -684,12 +686,13 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                   </span>
                   <Input
                     id="exchangeRate"
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    value={exchangeRate}
+                    type="text"
+                    inputMode="decimal"
+                    value={exchangeRateInput}
                     onChange={(e) => {
-                      const value = parseFloat(e.target.value);
+                      const raw = e.target.value.replace(',', '.');
+                      setExchangeRateInput(e.target.value);
+                      const value = parseFloat(raw);
                       if (!isNaN(value) && value > 0) {
                         setExchangeRate(value);
                       }
