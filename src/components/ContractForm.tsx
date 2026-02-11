@@ -236,7 +236,7 @@ export function ContractForm() {
   const handleInstallmentSelect = (installments: number, totalValue: number) => {
     setSelectedInstallment(installments);
     setIsAutoPrice(true);
-    setValue("valor", formatPriceBRL(totalValue));
+    setValue("valor", formatPriceBRL(totalValue), { shouldValidate: true });
   };
 
   // Auto-calculate price when days, exchange rate, or number of people changes (maintains selected payment type)
@@ -252,14 +252,14 @@ export function ContractForm() {
 
       if (paymentType === 'vista') {
         const baseCashPrice = getCashPrice(days, exchangeRate);
-        setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL));
+        setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL), { shouldValidate: true });
       } else {
-        const options = calculateInstallmentOptions(days, exchangeRate);
+        const options = calculateInstallmentOptions(days, exchangeRate, numberOfPeople);
         const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
 
         // O extra também entra no cálculo com a mesma taxa do cartão
         const totalWithExtra = selectedOption.totalValue + (extraPeopleChargeBRL * (1 + selectedOption.rate));
-        setValue("valor", formatPriceBRL(totalWithExtra));
+        setValue("valor", formatPriceBRL(totalWithExtra), { shouldValidate: true });
       }
     }
   }, [parkSelections.length, exchangeRate, datesLater, isAutoPrice, paymentType, selectedInstallment, quantidadePessoas, setValue]);
@@ -738,7 +738,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                         {...register("valor")}
                         onChange={(e) => {
                           setIsAutoPrice(false);
-                          setValue("valor", e.target.value);
+                          setValue("valor", e.target.value, { shouldValidate: true });
                         }}
                       />
                     </div>
@@ -757,12 +757,12 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
 
                             if (paymentType === 'vista') {
                               const baseCashPrice = getCashPrice(days, exchangeRate);
-                              setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL));
+                              setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL), { shouldValidate: true });
                             } else {
-                              const options = calculateInstallmentOptions(days, exchangeRate);
+                              const options = calculateInstallmentOptions(days, exchangeRate, numberOfPeople);
                               const selectedOption = options.find(o => o.installments === selectedInstallment) || options[0];
                               const totalWithExtra = selectedOption.totalValue + (extraPeopleChargeBRL * (1 + selectedOption.rate));
-                              setValue("valor", formatPriceBRL(totalWithExtra));
+                              setValue("valor", formatPriceBRL(totalWithExtra), { shouldValidate: true });
                             }
                           }
                         }}
