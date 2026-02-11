@@ -32,6 +32,30 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_dates: {
+        Row: {
+          blocked_date: string
+          created_at: string
+          guide_name: string
+          id: string
+          reason: string
+        }
+        Insert: {
+          blocked_date: string
+          created_at?: string
+          guide_name: string
+          id?: string
+          reason?: string
+        }
+        Update: {
+          blocked_date?: string
+          created_at?: string
+          guide_name?: string
+          id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           acceptance_token: string | null

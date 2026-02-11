@@ -1,9 +1,9 @@
-import { useMemo, useState, DragEvent } from "react";
+import { useMemo, useState, useEffect, useCallback, DragEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarDays, Castle, ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import { CalendarDays, Castle, ChevronLeft, ChevronRight, GripVertical, Lock, Unlock } from "lucide-react";
 import { format, isValid, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,8 +86,52 @@ export function DraggableCalendar({ contracts, guideName, onEventClick }: Dragga
   const [draggedEvent, setDraggedEvent] = useState<ScheduledEvent | null>(null);
   const [dropTargetDate, setDropTargetDate] = useState<Date | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
 
   const scheduledEvents = useMemo(() => parseScheduledDates(contracts), [contracts]);
+
+  // Fetch blocked dates for this guide
+  const fetchBlockedDates = useCallback(async () => {
+    const { data } = await supabase
+      .from('blocked_dates')
+      .select('blocked_date')
+      .eq('guide_name', guideName);
+    if (data) {
+      setBlockedDates(data.map(d => d.blocked_date));
+    }
+  }, [guideName]);
+
+  useEffect(() => {
+    fetchBlockedDates();
+  }, [fetchBlockedDates]);
+
+  const isDateBlocked = (day: Date) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    return blockedDates.includes(dateStr);
+  };
+
+  const toggleBlockDate = async (day: Date) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    if (isDateBlocked(day)) {
+      const { error } = await supabase
+        .from('blocked_dates')
+        .delete()
+        .eq('guide_name', guideName)
+        .eq('blocked_date', dateStr);
+      if (!error) {
+        setBlockedDates(prev => prev.filter(d => d !== dateStr));
+        toast.success(`${format(day, "dd/MM")} desbloqueado`);
+      }
+    } else {
+      const { error } = await supabase
+        .from('blocked_dates')
+        .insert({ guide_name: guideName, blocked_date: dateStr });
+      if (!error) {
+        setBlockedDates(prev => [...prev, dateStr]);
+        toast.success(`${format(day, "dd/MM")} marcado como Lotado`);
+      }
+    }
+  };
 
   const handleDragStart = (e: DragEvent<HTMLDivElement>, event: ScheduledEvent) => {
     setDraggedEvent(event);
@@ -242,29 +286,38 @@ export function DraggableCalendar({ contracts, guideName, onEventClick }: Dragga
                 const hasEvents = dayEvents.length > 0;
                 const isDropTarget = dropTargetDate && isSameDay(dropTargetDate, day);
                 const isDragging = !!draggedEvent;
+                const blocked = isDateBlocked(day);
                 
                 cells.push(
                   <Popover key={day.toISOString()}>
                     <PopoverTrigger asChild>
                       <div
                         className={`min-h-[50px] sm:min-h-[80px] rounded-md border p-0.5 sm:p-1 transition-all ${
-                          isDropTarget 
-                            ? "bg-primary/20 border-primary border-2 scale-105" 
-                            : isDragging 
-                              ? "border-dashed border-muted-foreground/50" 
-                              : hasEvents 
-                                ? "bg-muted/30 border-primary/30" 
-                                : "border-transparent"
-                        } ${isDragging ? "cursor-copy" : "cursor-pointer hover:bg-muted/50"}`}
-                        onDragOver={(e) => handleDragOver(e, day)}
+                          blocked
+                            ? "bg-destructive/10 border-destructive/40"
+                            : isDropTarget 
+                              ? "bg-primary/20 border-primary border-2 scale-105" 
+                              : isDragging 
+                                ? "border-dashed border-muted-foreground/50" 
+                                : hasEvents 
+                                  ? "bg-muted/30 border-primary/30" 
+                                  : "border-transparent"
+                        } ${isDragging && blocked ? "cursor-not-allowed" : isDragging ? "cursor-copy" : "cursor-pointer hover:bg-muted/50"}`}
+                        onDragOver={(e) => { if (!blocked) handleDragOver(e, day); }}
                         onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, day)}
+                        onDrop={(e) => { if (!blocked) handleDrop(e, day); }}
                       >
-                        <div className={`text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1 ${
-                          isDropTarget ? "text-primary font-bold" : hasEvents ? "text-primary" : "text-muted-foreground"
+                        <div className={`text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1 flex items-center gap-0.5 ${
+                          blocked ? "text-destructive" : isDropTarget ? "text-primary font-bold" : hasEvents ? "text-primary" : "text-muted-foreground"
                         }`}>
                           {format(day, "d")}
+                          {blocked && <Lock className="h-2 w-2 sm:h-3 sm:w-3" />}
                         </div>
+                        {blocked && (
+                          <div className="bg-destructive/20 text-destructive rounded px-0.5 text-[7px] sm:text-[9px] font-semibold text-center leading-tight">
+                            Lotado
+                          </div>
+                        )}
                         {hasEvents && (
                           <div className="space-y-0.5">
                             {dayEvents.map((event, idx) => (
@@ -299,7 +352,7 @@ export function DraggableCalendar({ contracts, guideName, onEventClick }: Dragga
                         )}
                       </div>
                     </PopoverTrigger>
-                    {hasEvents && !isDragging && (
+                    {!isDragging && (
                       <PopoverContent className="w-64 p-2" align="start">
                         <div className="space-y-2">
                           <p className="text-xs font-semibold text-muted-foreground">
@@ -322,6 +375,18 @@ export function DraggableCalendar({ contracts, guideName, onEventClick }: Dragga
                               <span className="text-muted-foreground">{event.park}</span>
                             </button>
                           ))}
+                          <Button
+                            variant={blocked ? "outline" : "destructive"}
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={() => toggleBlockDate(day)}
+                          >
+                            {blocked ? (
+                              <><Unlock className="h-3 w-3 mr-1" /> Desbloquear dia</>
+                            ) : (
+                              <><Lock className="h-3 w-3 mr-1" /> Marcar como Lotado</>
+                            )}
+                          </Button>
                         </div>
                       </PopoverContent>
                     )}
