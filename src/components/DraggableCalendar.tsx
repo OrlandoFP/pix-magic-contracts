@@ -45,7 +45,7 @@ function parseScheduledDates(contracts: Contract[]): ScheduledEvent[] {
   const events: ScheduledEvent[] = [];
   
   contracts.forEach((contract) => {
-    const lines = contract.datas_requeridas.split(/[\n]/);
+    const lines = contract.datas_requeridas.split(/[,;\n]/);
     
     lines.forEach((line) => {
       const trimmed = line.trim();
@@ -180,23 +180,16 @@ export function DraggableCalendar({ contracts, guideName, onEventClick }: Dragga
         return;
       }
       
-      // Parse all lines and replace the date for the dragged event
-      const lines = contract.datas_requeridas.split(/[\n]/);
-      const newLines = lines.map(line => {
-        const trimmed = line.trim();
-        if (trimmed === draggedEvent.originalLine) {
-          // Replace the date in this line
-          const newDateStr = format(targetDate, "dd/MM/yyyy");
-          const updatedLine = trimmed.replace(
-            /(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/,
-            newDateStr
-          );
-          return updatedLine;
-        }
-        return line;
-      });
-      
-      const newDatasRequeridas = newLines.join('\n');
+      // Replace the date in the original string using the originalLine as a marker
+      const newDateStr = format(targetDate, "dd/MM/yyyy");
+      const updatedLine = draggedEvent.originalLine.replace(
+        /(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/,
+        newDateStr
+      );
+      const newDatasRequeridas = contract.datas_requeridas.replace(
+        draggedEvent.originalLine,
+        updatedLine
+      );
       
       // Update the contract in the database
       const { error } = await supabase
