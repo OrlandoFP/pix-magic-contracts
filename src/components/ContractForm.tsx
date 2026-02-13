@@ -246,6 +246,12 @@ export function ContractForm() {
     const days = datesLater ? 0 : parkSelections.length;
     const numberOfPeople = parseInt(quantidadePessoas || "1") || 1;
     
+    if (days === 0) {
+      // When no parks selected or dates later, set a valid default
+      setValue("valor", "0,00", { shouldValidate: true });
+      return;
+    }
+    
     if (days > 0) {
       const extraPeopleCount = Math.max(0, numberOfPeople - 8);
       const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
