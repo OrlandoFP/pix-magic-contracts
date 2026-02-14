@@ -198,7 +198,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
   };
 
   return (
-    <Card className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}>
+    <Card className={`transition-all duration-300 ${isExpanded ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}>
       {/* Header - always visible */}
       <div 
         className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4 cursor-pointer"
