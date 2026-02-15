@@ -385,26 +385,22 @@ const Contratos = () => {
         </Card>
 
         {/* Contracts List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Contratos de {guideName}
-              <Badge variant="outline">{filteredContracts.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Carregando contratos...
-              </div>
-            ) : viewMode === "calendar" ? (
-              <GuideCalendar contracts={filteredContracts} guideName={guideName} />
-            ) : (
-              <ContractList data={filteredContracts} />
-            )}
-          </CardContent>
-        </Card>
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold font-display">Contratos de {guideName}</h2>
+            <Badge variant="outline">{filteredContracts.length}</Badge>
+          </div>
+          {loading ? (
+            <div className="text-center py-12 text-muted-foreground">
+              Carregando contratos...
+            </div>
+          ) : viewMode === "calendar" ? (
+            <GuideCalendar contracts={filteredContracts} guideName={guideName} />
+          ) : (
+            <ContractList data={filteredContracts} />
+          )}
+        </div>
       </main>
 
       <ContractEditDialog
