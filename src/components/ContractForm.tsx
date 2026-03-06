@@ -733,7 +733,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               <div className="flex items-center gap-4">
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="valor" className="text-sm">Valor Final do Contrato (R$) *</Label>
+                    <Label htmlFor="valor" className="text-sm">Valor Final do Contrato {paymentType === 'dolar' ? '(US$)' : '(R$)'} *</Label>
                     {isAutoPrice && (
                       <span className="text-xs text-green-600 font-medium flex items-center gap-1">
                         <RefreshCw className="h-3 w-3" />
@@ -744,7 +744,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
-                        R$
+                        {paymentType === 'dolar' ? 'US$' : 'R$'}
                       </span>
                       <Input
                         id="valor"
@@ -770,7 +770,10 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                             const extraPeopleCount = Math.max(0, numberOfPeople - 8);
                             const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
 
-                            if (paymentType === 'vista') {
+                            if (paymentType === 'dolar') {
+                              const usdTotal = getUSDPrice(days, numberOfPeople);
+                              setValue("valor", `US$ ${usdTotal.toFixed(2)}`, { shouldValidate: true });
+                            } else if (paymentType === 'vista') {
                               const baseCashPrice = getCashPrice(days, exchangeRate);
                               setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL), { shouldValidate: true });
                             } else {
