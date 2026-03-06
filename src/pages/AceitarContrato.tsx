@@ -21,7 +21,8 @@ import {
   Upload,
   Copy,
   Check,
-  Download
+  Download,
+  Banknote
 } from "lucide-react";
 import { generateContractPDF } from "@/lib/contract-pdf";
 import { Input } from "@/components/ui/input";
@@ -283,6 +284,8 @@ const AceitarContrato = () => {
     }
   };
 
+  const isUsdPayment = contract?.valor?.includes('US$');
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-background py-8 px-4">
@@ -328,50 +331,159 @@ const AceitarContrato = () => {
             </CardContent>
           </Card>
 
-          {/* PIX Payment Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="h-5 w-5 text-primary" />
-                Pagamento via PIX
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Chave PIX (CNPJ)</p>
-                <div className="flex items-center justify-center gap-2">
-                  <code className="text-xl font-mono font-bold text-primary">
-                    {PIX_CNPJ}
-                  </code>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyPix}
-                    className="gap-2"
-                  >
-                    {pixCopied ? (
-                      <>
-                        <Check className="h-4 w-4 text-green-500" />
-                        Copiado
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" />
-                        Copiar
-                      </>
-                    )}
-                  </Button>
+          {/* Payment Section - conditional on currency */}
+          {isUsdPayment ? (
+            /* Wise USD Payment Instructions */
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Banknote className="h-5 w-5 text-amber-600" />
+                  Pagamento em Dólar via Wise
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 text-center border border-amber-200">
+                  <p className="text-sm text-muted-foreground mb-1">Valor a pagar</p>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{contract?.valor}</p>
                 </div>
-              </div>
 
-              <div className="text-center space-y-1">
-                <p className="font-semibold text-lg">Valor: {contract?.valor}</p>
-                <p className="text-sm text-muted-foreground">
-                  Realize o pagamento e envie o comprovante abaixo
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="space-y-5 text-sm">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-base flex items-center gap-2">
+                      🧭 Passo a passo no Wise
+                    </h3>
+                  </div>
+
+                  {/* Step 1 */}
+                  <div className="rounded-lg border p-3 space-y-1">
+                    <p className="font-semibold">1️⃣ Acesse sua conta Wise</p>
+                    <p className="text-muted-foreground">
+                      Entre no app ou site do Wise e vá em:<br />
+                      <strong>Enviar dinheiro → Transferência bancária</strong>
+                    </p>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="rounded-lg border p-3 space-y-1">
+                    <p className="font-semibold">2️⃣ Escolha a moeda</p>
+                    <p className="text-muted-foreground">
+                      Selecione: <strong>USD – Dólar americano</strong><br />
+                      <span className="text-xs">(Se você ainda não tiver saldo em USD, o Wise vai converter automaticamente)</span>
+                    </p>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="rounded-lg border p-3 space-y-1">
+                    <p className="font-semibold">3️⃣ Informe o valor</p>
+                    <p className="text-muted-foreground">
+                      Digite o valor: <strong>{contract?.valor}</strong>
+                    </p>
+                  </div>
+
+                  {/* Step 4 */}
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <p className="font-semibold">4️⃣ Dados do destinatário</p>
+                    <div className="bg-muted/50 rounded p-3 space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Nome do titular:</span>
+                        <span className="font-medium">Renata dos Santos</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Tipo de conta:</span>
+                        <span className="font-medium">Checking (Conta Corrente)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Routing number (ACH):</span>
+                        <span className="font-medium font-mono">063100277</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Account number:</span>
+                        <span className="font-medium font-mono">898112086386</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Banco:</span>
+                        <span className="font-medium">Bank of America, N.A.</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Endereço do banco:</span>
+                        <p className="font-medium mt-1">100 North Tryon Street<br />Charlotte, NC 28255, USA</p>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">E-mail (opcional):</span>
+                        <span className="font-medium">renataga.santos34@gmail.com</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      ⚠️ O nome deve estar igual ao nome no Bank of America
+                    </p>
+                  </div>
+
+                  {/* Step 5 */}
+                  <div className="rounded-lg border p-3 space-y-1">
+                    <p className="font-semibold">5️⃣ Confirme o tipo de transferência</p>
+                    <p className="text-muted-foreground">
+                      Quando o Wise perguntar:<br />
+                      ✅ <strong>ACH (Local US)</strong> → CONFIRMAR<br />
+                      ❌ <strong>Wire</strong> → NÃO escolher
+                    </p>
+                  </div>
+
+                  {/* Step 6 */}
+                  <div className="rounded-lg border p-3 space-y-1">
+                    <p className="font-semibold">6️⃣ Revisar e enviar</p>
+                    <p className="text-muted-foreground">
+                      Confira tudo e confirme o envio.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            /* PIX Payment Section (BRL) */
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="h-5 w-5 text-primary" />
+                  Pagamento via PIX
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-2">Chave PIX (CNPJ)</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <code className="text-xl font-mono font-bold text-primary">
+                      {PIX_CNPJ}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyPix}
+                      className="gap-2"
+                    >
+                      {pixCopied ? (
+                        <>
+                          <Check className="h-4 w-4 text-green-500" />
+                          Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="text-center space-y-1">
+                  <p className="font-semibold text-lg">Valor: {contract?.valor}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Realize o pagamento e envie o comprovante abaixo
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Receipt Upload Section */}
           <Card>

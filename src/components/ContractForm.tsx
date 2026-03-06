@@ -21,7 +21,7 @@ import {
 import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
 import { ContractGuidelinesDialog } from "./ContractGuidelinesDialog";
 import { PaymentSelector, type PaymentType } from "./PaymentSelector";
-import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getCashPrice, calculateInstallmentOptions } from "@/lib/pricing";
+import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getCashPrice, calculateInstallmentOptions, getUSDPrice } from "@/lib/pricing";
 import { generatePassword, type UserCredentials } from "@/lib/password-generator";
 const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
 
@@ -236,7 +236,11 @@ export function ContractForm() {
   const handleInstallmentSelect = (installments: number, totalValue: number) => {
     setSelectedInstallment(installments);
     setIsAutoPrice(true);
-    setValue("valor", formatPriceBRL(totalValue), { shouldValidate: true });
+    if (paymentType === 'dolar') {
+      setValue("valor", `US$ ${totalValue.toFixed(2)}`, { shouldValidate: true });
+    } else {
+      setValue("valor", formatPriceBRL(totalValue), { shouldValidate: true });
+    }
   };
 
   // Auto-calculate price when days, exchange rate, or number of people changes (maintains selected payment type)
@@ -256,7 +260,10 @@ export function ContractForm() {
       const extraPeopleCount = Math.max(0, numberOfPeople - 8);
       const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
 
-      if (paymentType === 'vista') {
+      if (paymentType === 'dolar') {
+        const usdTotal = getUSDPrice(days, numberOfPeople);
+        setValue("valor", `US$ ${usdTotal.toFixed(2)}`, { shouldValidate: true });
+      } else if (paymentType === 'vista') {
         const baseCashPrice = getCashPrice(days, exchangeRate);
         setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL), { shouldValidate: true });
       } else {
@@ -424,6 +431,8 @@ export function ContractForm() {
       // Build payment method description
       const formaPagamento = paymentType === 'vista' 
         ? 'À Vista / Pix / Boleto' 
+        : paymentType === 'dolar'
+        ? 'Pagamento em Dólar (Wise)'
         : `Parcelado (${selectedInstallment}x no Cartão)`;
 
       // Generate and download PDF
@@ -724,7 +733,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               <div className="flex items-center gap-4">
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="valor" className="text-sm">Valor Final do Contrato (R$) *</Label>
+                    <Label htmlFor="valor" className="text-sm">Valor Final do Contrato {paymentType === 'dolar' ? '(US$)' : '(R$)'} *</Label>
                     {isAutoPrice && (
                       <span className="text-xs text-green-600 font-medium flex items-center gap-1">
                         <RefreshCw className="h-3 w-3" />
@@ -735,7 +744,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
-                        R$
+                        {paymentType === 'dolar' ? 'US$' : 'R$'}
                       </span>
                       <Input
                         id="valor"
@@ -761,7 +770,10 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                             const extraPeopleCount = Math.max(0, numberOfPeople - 8);
                             const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
 
-                            if (paymentType === 'vista') {
+                            if (paymentType === 'dolar') {
+                              const usdTotal = getUSDPrice(days, numberOfPeople);
+                              setValue("valor", `US$ ${usdTotal.toFixed(2)}`, { shouldValidate: true });
+                            } else if (paymentType === 'vista') {
                               const baseCashPrice = getCashPrice(days, exchangeRate);
                               setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL), { shouldValidate: true });
                             } else {
