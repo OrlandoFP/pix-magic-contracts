@@ -21,7 +21,7 @@ import {
 import { ParkDateSelector, type ParkSelection, formatParkSelections, PARKS } from "./ParkDateSelector";
 import { ContractGuidelinesDialog } from "./ContractGuidelinesDialog";
 import { PaymentSelector, type PaymentType } from "./PaymentSelector";
-import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getCashPrice, calculateInstallmentOptions } from "@/lib/pricing";
+import { calculatePrice, formatPriceBRL, DEFAULT_EXCHANGE_RATE, getCashPrice, calculateInstallmentOptions, getUSDPrice } from "@/lib/pricing";
 import { generatePassword, type UserCredentials } from "@/lib/password-generator";
 const TEMPLATE_TEXT = `📋 FORMULÁRIO DE RESERVA
 
@@ -261,8 +261,6 @@ export function ContractForm() {
       const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
 
       if (paymentType === 'dolar') {
-        // USD price
-        const { getUSDPrice } = require("@/lib/pricing");
         const usdTotal = getUSDPrice(days, numberOfPeople);
         setValue("valor", `US$ ${usdTotal.toFixed(2)}`, { shouldValidate: true });
       } else if (paymentType === 'vista') {
