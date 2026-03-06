@@ -12,7 +12,7 @@ import {
   type InstallmentOption 
 } from "@/lib/pricing";
 
-export type PaymentType = 'vista' | 'parcelado';
+export type PaymentType = 'vista' | 'parcelado' | 'dolar';
 
 interface PaymentSelectorProps {
   days: number;
@@ -102,7 +102,7 @@ export function PaymentSelector({
       </div>
 
       {/* Payment Type Selection */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {/* À Vista Option */}
         <div
           onClick={() => {
@@ -241,6 +241,50 @@ export function PaymentSelector({
             <div className="mt-3 pt-3 border-t border-border/50">
               <p className="text-xs text-muted-foreground text-center">
                 Clique para ver as opções de parcelamento
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Dólar Option */}
+        <div
+          onClick={() => {
+            onPaymentTypeChange('dolar');
+            onInstallmentSelect(0, usdPrice);
+          }}
+          className={cn(
+            "rounded-xl border-2 p-4 cursor-pointer transition-all",
+            paymentType === 'dolar'
+              ? "border-amber-500 bg-amber-500/10"
+              : "border-border hover:border-amber-500/50"
+          )}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            {paymentType === 'dolar' && <Check className="h-4 w-4 text-amber-600" />}
+            <Banknote className={cn("h-5 w-5", paymentType === 'dolar' ? "text-amber-600" : "text-muted-foreground")} />
+            <span className={cn("font-semibold text-sm", paymentType === 'dolar' && "text-amber-700")}>
+              Dólar
+            </span>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground mb-1">Transferência via Wise</p>
+            <p className={cn("text-2xl font-bold", paymentType === 'dolar' ? "text-amber-700" : "text-foreground")}>
+              $ {usdPrice.toFixed(2)}
+            </p>
+          </div>
+          
+          {paymentType === 'dolar' && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <p className="text-xs text-muted-foreground text-center">
+                Pagamento direto em USD via Wise
+              </p>
+            </div>
+          )}
+          
+          {paymentType !== 'dolar' && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <p className="text-xs text-muted-foreground text-center">
+                Clique para pagar em dólar
               </p>
             </div>
           )}
