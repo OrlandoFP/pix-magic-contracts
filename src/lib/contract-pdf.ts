@@ -176,7 +176,8 @@ function renderPage1(
   y += adventureRowHeight;
 
   // Row 3: Valor Total (full width)
-  drawTableRowClean(doc, margin, y, contentWidth, adventureRowHeight, "Valor Total:", `R$ ${data.valor}`);
+  const isUSD = data.valor.startsWith('US$') || data.valor.startsWith('US$ ');
+  drawTableRowClean(doc, margin, y, contentWidth, adventureRowHeight, "Valor Total:", isUSD ? data.valor : `R$ ${data.valor}`);
   y += adventureRowHeight;
 
   // Row 3: Parques (quebra automática de página quando necessário)
