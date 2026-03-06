@@ -431,6 +431,8 @@ export function ContractForm() {
       // Build payment method description
       const formaPagamento = paymentType === 'vista' 
         ? 'À Vista / Pix / Boleto' 
+        : paymentType === 'dolar'
+        ? 'Pagamento em Dólar (Wise)'
         : `Parcelado (${selectedInstallment}x no Cartão)`;
 
       // Generate and download PDF
