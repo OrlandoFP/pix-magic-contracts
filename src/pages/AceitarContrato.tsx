@@ -21,7 +21,8 @@ import {
   Upload,
   Copy,
   Check,
-  Download
+  Download,
+  Banknote
 } from "lucide-react";
 import { generateContractPDF } from "@/lib/contract-pdf";
 import { Input } from "@/components/ui/input";
