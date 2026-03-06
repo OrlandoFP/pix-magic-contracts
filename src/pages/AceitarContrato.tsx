@@ -284,7 +284,7 @@ const AceitarContrato = () => {
     }
   };
 
-  const isUsdPayment = contract?.valor?.includes('US$');
+  const isUsdPayment = contract?.valor?.startsWith('$') || contract?.valor?.startsWith('$ ');
 
   if (submitted) {
     return (
