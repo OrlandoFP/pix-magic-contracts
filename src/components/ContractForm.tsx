@@ -236,7 +236,11 @@ export function ContractForm() {
   const handleInstallmentSelect = (installments: number, totalValue: number) => {
     setSelectedInstallment(installments);
     setIsAutoPrice(true);
-    setValue("valor", formatPriceBRL(totalValue), { shouldValidate: true });
+    if (paymentType === 'dolar') {
+      setValue("valor", `US$ ${totalValue.toFixed(2)}`, { shouldValidate: true });
+    } else {
+      setValue("valor", formatPriceBRL(totalValue), { shouldValidate: true });
+    }
   };
 
   // Auto-calculate price when days, exchange rate, or number of people changes (maintains selected payment type)
@@ -256,7 +260,12 @@ export function ContractForm() {
       const extraPeopleCount = Math.max(0, numberOfPeople - 8);
       const extraPeopleChargeBRL = extraPeopleCount * days * 20 * exchangeRate;
 
-      if (paymentType === 'vista') {
+      if (paymentType === 'dolar') {
+        // USD price
+        const { getUSDPrice } = require("@/lib/pricing");
+        const usdTotal = getUSDPrice(days, numberOfPeople);
+        setValue("valor", `US$ ${usdTotal.toFixed(2)}`, { shouldValidate: true });
+      } else if (paymentType === 'vista') {
         const baseCashPrice = getCashPrice(days, exchangeRate);
         setValue("valor", formatPriceBRL(baseCashPrice + extraPeopleChargeBRL), { shouldValidate: true });
       } else {
