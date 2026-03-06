@@ -176,7 +176,7 @@ function renderPage1(
   y += adventureRowHeight;
 
   // Row 3: Valor Total (full width)
-  const isUSD = data.valor.startsWith('US$') || data.valor.startsWith('US$ ');
+  const isUSD = data.valor.startsWith('$') || data.valor.startsWith('$ ');
   drawTableRowClean(doc, margin, y, contentWidth, adventureRowHeight, "Valor Total:", isUSD ? data.valor : `R$ ${data.valor}`);
   y += adventureRowHeight;
 
