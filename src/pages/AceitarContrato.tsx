@@ -454,7 +454,7 @@ const AceitarContrato = () => {
                   <p className="text-sm text-muted-foreground mb-2">Chave PIX (CNPJ)</p>
                   <div className="flex items-center justify-center gap-2">
                     <code className="text-xl font-mono font-bold text-primary">
-                      {PIX_CNPJ}
+                      {contract?.pix_key || PIX_CNPJ_DEFAULT}
                     </code>
                     <Button
                       variant="outline"
