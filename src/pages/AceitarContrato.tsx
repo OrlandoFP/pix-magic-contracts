@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_CONTRACT_TERMS } from "@/lib/contract-terms";
 
-const PIX_CNPJ = "33142150000199";
+const PIX_CNPJ_DEFAULT = "33142150000199";
 
 interface ContractData {
   id: string;
