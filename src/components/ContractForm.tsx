@@ -77,6 +77,7 @@ export function ContractForm() {
   const webhookUrl = "https://qjfhyqjgqutkabxaeopi.supabase.co/functions/v1/create-client";
   const [generatedCredentials, setGeneratedCredentials] = useState<UserCredentials | null>(null);
   const [webhookEnabled, setWebhookEnabled] = useState(true); // Toggle para pausar/ativar webhook
+  const [selectedPixKey, setSelectedPixKey] = useState<string>("33142150000199");
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -130,6 +131,7 @@ export function ContractForm() {
     setPaymentType('vista');
     setSelectedInstallment(0);
     setGeneratedCredentials(null);
+    setSelectedPixKey("33142150000199");
   };
 
   // Function to send credentials to external webhook (Seu Roteiro Orlando)
@@ -417,6 +419,7 @@ export function ContractForm() {
         hospede_disney: data.hospedeDisney,
         acceptance_token: newToken,
         umbler_chat_url: umblerChatUrl.trim() || null,
+        pix_key: paymentType !== 'dolar' ? selectedPixKey : null,
       }]).select("id").single();
 
       if (dbError) {
@@ -727,6 +730,22 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               onPaymentTypeChange={setPaymentType}
               onInstallmentSelect={handleInstallmentSelect}
             />
+
+            {/* PIX Key Selector - only for BRL payments */}
+            {paymentType !== 'dolar' && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Chave PIX para o link de aceite</Label>
+                <Select value={selectedPixKey} onValueChange={setSelectedPixKey}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="33142150000199">33.142.150/0001-99 (CNPJ atual)</SelectItem>
+                    <SelectItem value="55513365000101">55.513.365/0001-01 (CNPJ novo)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Manual value override */}
             <div className="pt-3 border-t border-border/50">

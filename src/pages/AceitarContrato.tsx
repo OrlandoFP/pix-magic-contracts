@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_CONTRACT_TERMS } from "@/lib/contract-terms";
 
-const PIX_CNPJ = "33142150000199";
+const PIX_CNPJ_DEFAULT = "33142150000199";
 
 interface ContractData {
   id: string;
@@ -48,6 +48,7 @@ interface ContractData {
   accepted_at: string | null;
   signature_url: string | null;
   payment_receipt_url: string | null;
+  pix_key: string | null;
 }
 
 const AceitarContrato = () => {
@@ -204,7 +205,8 @@ const AceitarContrato = () => {
 
   const handleCopyPix = async () => {
     try {
-      await navigator.clipboard.writeText(PIX_CNPJ);
+      const pixKey = contract?.pix_key || PIX_CNPJ_DEFAULT;
+      await navigator.clipboard.writeText(pixKey);
       setPixCopied(true);
       toast({
         title: "PIX copiado!",
@@ -452,7 +454,7 @@ const AceitarContrato = () => {
                   <p className="text-sm text-muted-foreground mb-2">Chave PIX (CNPJ)</p>
                   <div className="flex items-center justify-center gap-2">
                     <code className="text-xl font-mono font-bold text-primary">
-                      {PIX_CNPJ}
+                      {contract?.pix_key || PIX_CNPJ_DEFAULT}
                     </code>
                     <Button
                       variant="outline"
