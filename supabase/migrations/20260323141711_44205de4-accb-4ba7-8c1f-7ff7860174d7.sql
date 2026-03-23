@@ -1,0 +1,1 @@
+ALTER TABLE public.contracts ADD COLUMN pix_key text DEFAULT '33142150000199';

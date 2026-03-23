@@ -75,6 +75,7 @@ export type Database = {
           nome_completo: string
           nome_guia: string
           payment_receipt_url: string | null
+          pix_key: string | null
           quantidade_dias: number
           quantidade_pessoas: number | null
           signature_url: string | null
@@ -101,6 +102,7 @@ export type Database = {
           nome_completo: string
           nome_guia: string
           payment_receipt_url?: string | null
+          pix_key?: string | null
           quantidade_dias: number
           quantidade_pessoas?: number | null
           signature_url?: string | null
@@ -127,6 +129,7 @@ export type Database = {
           nome_completo?: string
           nome_guia?: string
           payment_receipt_url?: string | null
+          pix_key?: string | null
           quantidade_dias?: number
           quantidade_pessoas?: number | null
           signature_url?: string | null
