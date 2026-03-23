@@ -77,6 +77,7 @@ export function ContractForm() {
   const webhookUrl = "https://qjfhyqjgqutkabxaeopi.supabase.co/functions/v1/create-client";
   const [generatedCredentials, setGeneratedCredentials] = useState<UserCredentials | null>(null);
   const [webhookEnabled, setWebhookEnabled] = useState(true); // Toggle para pausar/ativar webhook
+  const [selectedPixKey, setSelectedPixKey] = useState<string>("33142150000199");
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
