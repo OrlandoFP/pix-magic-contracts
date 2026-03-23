@@ -205,7 +205,8 @@ const AceitarContrato = () => {
 
   const handleCopyPix = async () => {
     try {
-      await navigator.clipboard.writeText(PIX_CNPJ);
+      const pixKey = contract?.pix_key || PIX_CNPJ_DEFAULT;
+      await navigator.clipboard.writeText(pixKey);
       setPixCopied(true);
       toast({
         title: "PIX copiado!",
