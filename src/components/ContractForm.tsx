@@ -730,6 +730,22 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               onInstallmentSelect={handleInstallmentSelect}
             />
 
+            {/* PIX Key Selector - only for BRL payments */}
+            {paymentType !== 'dolar' && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Chave PIX para o link de aceite</Label>
+                <Select value={selectedPixKey} onValueChange={setSelectedPixKey}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="33142150000199">33.142.150/0001-99 (CNPJ atual)</SelectItem>
+                    <SelectItem value="55513365000101">55.513.365/0001-01 (CNPJ novo)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Manual value override */}
             <div className="pt-3 border-t border-border/50">
               <div className="flex items-center gap-4">

@@ -48,6 +48,7 @@ interface ContractData {
   accepted_at: string | null;
   signature_url: string | null;
   payment_receipt_url: string | null;
+  pix_key: string | null;
 }
 
 const AceitarContrato = () => {
