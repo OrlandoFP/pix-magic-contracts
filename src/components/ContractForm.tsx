@@ -131,6 +131,7 @@ export function ContractForm() {
     setPaymentType('vista');
     setSelectedInstallment(0);
     setGeneratedCredentials(null);
+    setSelectedPixKey("33142150000199");
   };
 
   // Function to send credentials to external webhook (Seu Roteiro Orlando)
