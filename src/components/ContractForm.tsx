@@ -418,6 +418,7 @@ export function ContractForm() {
         hospede_disney: data.hospedeDisney,
         acceptance_token: newToken,
         umbler_chat_url: umblerChatUrl.trim() || null,
+        pix_key: paymentType !== 'dolar' ? selectedPixKey : null,
       }]).select("id").single();
 
       if (dbError) {
