@@ -252,10 +252,16 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
         {/* Status badges and expand button */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          {paymentReceiptUrl && (
+          {isPago && (
             <Badge className="bg-emerald-600 text-white hidden sm:inline-flex gap-1 text-xs">
               <Check className="h-3 w-3" />
               Pago
+            </Badge>
+          )}
+          {paymentReceiptUrl && !isPago && (
+            <Badge className="bg-emerald-600 text-white hidden sm:inline-flex gap-1 text-xs">
+              <Check className="h-3 w-3" />
+              Comprov.
             </Badge>
           )}
           {contract.accepted_at && (
