@@ -74,6 +74,7 @@ export type Database = {
           nf_emitida: boolean
           nome_completo: string
           nome_guia: string
+          pago: boolean
           payment_receipt_url: string | null
           pix_key: string | null
           quantidade_dias: number
@@ -101,6 +102,7 @@ export type Database = {
           nf_emitida?: boolean
           nome_completo: string
           nome_guia: string
+          pago?: boolean
           payment_receipt_url?: string | null
           pix_key?: string | null
           quantidade_dias: number
@@ -128,6 +130,7 @@ export type Database = {
           nf_emitida?: boolean
           nome_completo?: string
           nome_guia?: string
+          pago?: boolean
           payment_receipt_url?: string | null
           pix_key?: string | null
           quantidade_dias?: number
