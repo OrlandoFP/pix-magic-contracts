@@ -45,6 +45,7 @@ interface ContractCardProps {
 export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isComprado, setIsComprado] = useState(contract.comprado || false);
+  const [isPago, setIsPago] = useState((contract as any).pago || false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [signedContractUrl, setSignedContractUrl] = useState(contract.signed_contract_url || null);
   const [paymentReceiptUrl, setPaymentReceiptUrl] = useState(contract.payment_receipt_url || null);
@@ -93,6 +94,25 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
     } else {
       setIsComprado(newValue);
       toast.success(newValue ? 'Marcado como comprado' : 'Desmarcado');
+    }
+    setIsUpdating(false);
+  };
+
+  const handleTogglePago = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsUpdating(true);
+    
+    const newValue = !isPago;
+    const { error } = await supabase
+      .from('contracts')
+      .update({ pago: newValue } as any)
+      .eq('id', contract.id);
+    
+    if (error) {
+      toast.error('Erro ao atualizar status de pagamento');
+    } else {
+      setIsPago(newValue);
+      toast.success(newValue ? 'Marcado como pago' : 'Desmarcado pagamento');
     }
     setIsUpdating(false);
   };
@@ -232,10 +252,16 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
         {/* Status badges and expand button */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          {paymentReceiptUrl && (
+          {isPago && (
             <Badge className="bg-emerald-600 text-white hidden sm:inline-flex gap-1 text-xs">
               <Check className="h-3 w-3" />
               Pago
+            </Badge>
+          )}
+          {paymentReceiptUrl && !isPago && (
+            <Badge className="bg-emerald-600 text-white hidden sm:inline-flex gap-1 text-xs">
+              <Check className="h-3 w-3" />
+              Comprov.
             </Badge>
           )}
           {contract.accepted_at && (
@@ -399,6 +425,19 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
               <div className="flex flex-col gap-2">
                 {/* Row 1: Comprar + WhatsApp + Umbler */}
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className={`gap-1.5 h-9 px-3 rounded-lg ${
+                      isPago 
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                        : 'bg-rose-500 hover:bg-rose-600 text-white'
+                    }`}
+                    onClick={handleTogglePago}
+                    disabled={isUpdating}
+                  >
+                    {isPago ? <Check className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                    {isPago ? 'Pago' : 'Pagar'}
+                  </Button>
                   <Button
                     size="sm"
                     className={`gap-1.5 h-9 px-3 rounded-lg ${
