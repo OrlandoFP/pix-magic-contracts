@@ -108,7 +108,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
     const newValue = !isPago;
     const { error } = await supabase
       .from('contracts')
-      .update({ pago: newValue } as any)
+      .update({ pago: newValue })
       .eq('id', contract.id);
     
     if (error) {
