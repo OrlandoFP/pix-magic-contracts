@@ -28,6 +28,9 @@ interface Contract {
   created_at: string;
   hospede_disney: boolean;
   comprado?: boolean;
+  pago?: boolean;
+  nf_emitida?: boolean;
+  pix_key?: string | null;
   signed_contract_url?: string | null;
   payment_receipt_url?: string | null;
   acceptance_token?: string | null;
