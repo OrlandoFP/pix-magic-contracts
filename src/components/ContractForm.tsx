@@ -77,7 +77,7 @@ export function ContractForm() {
   const webhookUrl = "https://qjfhyqjgqutkabxaeopi.supabase.co/functions/v1/create-client";
   const [generatedCredentials, setGeneratedCredentials] = useState<UserCredentials | null>(null);
   const [webhookEnabled, setWebhookEnabled] = useState(true); // Toggle para pausar/ativar webhook
-  const [selectedPixKey, setSelectedPixKey] = useState<string>("33142150000199");
+  const [selectedPixKey, setSelectedPixKey] = useState<string>("55513365000101");
   const { toast } = useToast();
 
   const handleCopyTemplate = async () => {
@@ -131,7 +131,7 @@ export function ContractForm() {
     setPaymentType('vista');
     setSelectedInstallment(0);
     setGeneratedCredentials(null);
-    setSelectedPixKey("33142150000199");
+    setSelectedPixKey("55513365000101");
   };
 
   // Function to send credentials to external webhook (Seu Roteiro Orlando)
@@ -740,8 +740,7 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="33142150000199">33.142.150/0001-99 (CNPJ atual)</SelectItem>
-                    <SelectItem value="55513365000101">55.513.365/0001-01 (CNPJ novo)</SelectItem>
+                    <SelectItem value="55513365000101">55.513.365/0001-01 (CNPJ)</SelectItem>
                     <SelectItem value="contato@orlandofastpass.com.br">contato@orlandofastpass.com.br (E-mail)</SelectItem>
                   </SelectContent>
                 </Select>
