@@ -221,7 +221,7 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
   };
 
   return (
-    <Card className={`transition-all duration-300 ${isExpanded ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}>
+    <Card className={`touch-pan-y transition-all duration-300 ${isExpanded ? 'shadow-lg ring-2 ring-primary/20' : 'hover:shadow-md'}`}>
       {/* Header - always visible */}
       <div 
         className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4 cursor-pointer"
@@ -290,8 +290,8 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
 
       {/* Expanded content */}
       {isExpanded && (
-        <CardContent className="pt-0 pb-4 sm:pb-6 px-3 sm:px-4 border-t">
-          <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
+        <CardContent className="touch-pan-y overscroll-contain pt-0 pb-4 sm:pb-6 px-3 sm:px-4 border-t">
+          <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 touch-pan-y">
             {/* Info and actions row */}
             <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
               {/* Contact and period info */}
