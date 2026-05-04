@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_CONTRACT_TERMS } from "@/lib/contract-terms";
 
-const PIX_CNPJ_DEFAULT = "33142150000199";
+const PIX_CNPJ_DEFAULT = "contato@orlandofastpass.com.br";
 
 interface ContractData {
   id: string;
@@ -205,8 +205,7 @@ const AceitarContrato = () => {
 
   const handleCopyPix = async () => {
     try {
-      const pixKey = contract?.pix_key || PIX_CNPJ_DEFAULT;
-      await navigator.clipboard.writeText(pixKey);
+      await navigator.clipboard.writeText(PIX_CNPJ_DEFAULT);
       setPixCopied(true);
       toast({
         title: "PIX copiado!",
@@ -451,10 +450,10 @@ const AceitarContrato = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-2">Chave PIX (CNPJ)</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <code className="text-xl font-mono font-bold text-primary">
-                      {contract?.pix_key || PIX_CNPJ_DEFAULT}
+                  <p className="text-sm text-muted-foreground mb-2">Chave PIX (E-mail)</p>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <code className="text-lg sm:text-xl font-mono font-bold text-primary break-all">
+                      contato@orlandofastpass.com.br
                     </code>
                     <Button
                       variant="outline"
