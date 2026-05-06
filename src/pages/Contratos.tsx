@@ -375,7 +375,28 @@ const Contratos = () => {
           ) : viewMode === "calendar" ? (
             <GuideCalendar contracts={filteredContracts} guideName={guideName} />
           ) : (
-            <ContractList data={filteredContracts} />
+            filteredContracts.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhum contrato encontrado</p>
+                {hasActiveFilters && (
+                  <Button variant="link" onClick={clearFilters} className="mt-2">
+                    Limpar filtros
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredContracts.map((contract) => (
+                  <ContractCard
+                    key={contract.id}
+                    contract={contract}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            )
           )}
         </div>
       </main>
