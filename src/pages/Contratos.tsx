@@ -113,7 +113,9 @@ const Contratos = () => {
 
   const handleEdit = (contract: Contract) => {
     setSelectedContract(contract);
-    setEditDialogOpen(true);
+    // Defer opening to next tick to avoid the click event also being
+    // captured by the Dialog overlay (which would close it immediately).
+    setTimeout(() => setEditDialogOpen(true), 0);
   };
 
   const handleDelete = (contract: Contract) => {
