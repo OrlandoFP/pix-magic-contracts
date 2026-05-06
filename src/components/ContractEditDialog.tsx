@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Save, Headset } from "lucide-react";
+import { Loader2, Save, Headset, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   contractFormSchema,
   type ContractFormData,
@@ -100,7 +94,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       }
       setUmblerChatUrl(contract.umbler_chat_url || "");
     }
-  }, [open, contract?.id, contract?.datas_requeridas, contract?.umbler_chat_url]);
+  }, [open, contract]);
 
   const formValues = useMemo<ContractFormData | undefined>(() => {
     if (!contract) return undefined;
@@ -152,7 +146,26 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     if (!open) return;
     if (!formValues) return;
     reset(formValues);
-  }, [open, contract?.id, reset]);
+  }, [open, contract?.id, formValues, reset]);
+
+  useEffect(() => {
+    if (!open || !contract) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onOpenChange(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, contract, onOpenChange]);
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatCPF(e.target.value);
@@ -261,12 +274,41 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     }
   };
 
+  if (!open || !contract) return null;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
-        <DialogHeader>
-          <DialogTitle>Editar Contrato</DialogTitle>
-        </DialogHeader>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onOpenChange(false);
+        }
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-contract-title"
+        className="relative grid w-full max-w-2xl max-h-[90dvh] gap-4 overflow-y-auto overscroll-contain touch-pan-y rounded-lg border bg-background p-6 shadow-lg [-webkit-overflow-scrolling:touch]"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4"
+          aria-label="Fechar"
+          onClick={() => onOpenChange(false)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+
+        <div className="flex flex-col space-y-1.5 pr-10 text-center sm:text-left">
+          <h2 id="edit-contract-title" className="text-lg font-semibold leading-none tracking-tight">
+            Editar Contrato
+          </h2>
+        </div>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 touch-pan-y">
           <div className="grid gap-4 md:grid-cols-2">
@@ -448,7 +490,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
