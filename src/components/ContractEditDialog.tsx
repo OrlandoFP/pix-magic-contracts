@@ -94,7 +94,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       }
       setUmblerChatUrl(contract.umbler_chat_url || "");
     }
-  }, [open, contract?.id, contract?.datas_requeridas, contract?.umbler_chat_url]);
+  }, [open, contract]);
 
   const formValues = useMemo<ContractFormData | undefined>(() => {
     if (!contract) return undefined;
@@ -111,7 +111,20 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       quantidadePessoas: String(contract.quantidade_pessoas || 1),
       hospedeDisney: contract.hospede_disney,
     };
-  }, [contract]);
+  }, [
+    contract?.id,
+    contract?.nome_completo,
+    contract?.cpf,
+    contract?.email,
+    contract?.telefone,
+    contract?.endereco,
+    contract?.cep,
+    contract?.nome_guia,
+    contract?.valor,
+    contract?.datas_requeridas,
+    contract?.quantidade_pessoas,
+    contract?.hospede_disney,
+  ]);
 
   const {
     register,
@@ -146,7 +159,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
     if (!open) return;
     if (!formValues) return;
     reset(formValues);
-  }, [open, contract?.id, reset]);
+  }, [open, contract?.id, formValues, reset]);
 
   useEffect(() => {
     if (!open || !contract) return;
