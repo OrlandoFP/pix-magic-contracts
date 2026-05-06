@@ -111,20 +111,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       quantidadePessoas: String(contract.quantidade_pessoas || 1),
       hospedeDisney: contract.hospede_disney,
     };
-  }, [
-    contract?.id,
-    contract?.nome_completo,
-    contract?.cpf,
-    contract?.email,
-    contract?.telefone,
-    contract?.endereco,
-    contract?.cep,
-    contract?.nome_guia,
-    contract?.valor,
-    contract?.datas_requeridas,
-    contract?.quantidade_pessoas,
-    contract?.hospede_disney,
-  ]);
+  }, [contract]);
 
   const {
     register,
