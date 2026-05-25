@@ -152,17 +152,13 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
 
       {/* Option to define dates later */}
       {onDatesLaterChange && (
-        <div 
+        <div
           className={cn(
-            "rounded-xl border p-4 cursor-pointer transition-all",
-            datesLater 
-              ? "border-blue-500/50 bg-blue-500/10" 
+            "rounded-xl border p-4 transition-all",
+            datesLater
+              ? "border-blue-500/50 bg-blue-500/10"
               : "border-border hover:border-muted-foreground/30"
           )}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDatesLaterChange(!datesLater);
-          }}
         >
           <div className="flex items-center gap-3">
             <Checkbox
@@ -171,10 +167,9 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
               onCheckedChange={(checked) => {
                 onDatesLaterChange(checked === true);
               }}
-              onClick={(e) => e.stopPropagation()}
               className="h-5 w-5"
             />
-            <div className="flex items-center gap-2">
+            <label htmlFor="dates-later" className="flex items-center gap-2 cursor-pointer flex-1">
               <CalendarClock className="h-5 w-5 text-blue-600" />
               <div>
                 <span className="font-medium">
@@ -184,7 +179,7 @@ export function ParkDateSelector({ value, onChange, datesLater = false, onDatesL
                   Gere o contrato agora e defina os parques e datas posteriormente
                 </p>
               </div>
-            </div>
+            </label>
           </div>
         </div>
       )}
