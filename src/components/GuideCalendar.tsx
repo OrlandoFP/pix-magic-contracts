@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, ChevronLeft, ChevronRight, Filter, Headset, Pencil } from "lucide-react";
+import { CalendarDays, Users, AlertTriangle, Castle, MessageCircle, Check, ShoppingCart, Phone, MapPin, ChevronLeft, ChevronRight, Filter, Headset, Pencil, CalendarCheck, Loader2 } from "lucide-react";
 import { format, isValid, subDays, isAfter, isBefore, addDays, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isSameMonth, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -180,6 +180,26 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   const [eventFilter, setEventFilter] = useState<EventFilter>("current-month");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [contractToEdit, setContractToEdit] = useState<Contract | null>(null);
+  const [syncingCalendar, setSyncingCalendar] = useState(false);
+
+  const handleSyncGoogleCalendar = async () => {
+    setSyncingCalendar(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-google-calendar", {
+        body: { guideName },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(
+        `Google Agenda sincronizada: ${data.created} criados, ${data.updated} atualizados${data.errors ? `, ${data.errors} erros` : ""}`,
+      );
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao sincronizar: " + (e instanceof Error ? e.message : "desconhecido"));
+    } finally {
+      setSyncingCalendar(false);
+    }
+  };
 
   // Function to open edit dialog for a contract
   const handleOpenEditDialog = (contractId: string) => {
@@ -282,6 +302,20 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
 
   return (
     <div className="space-y-6">
+      {guideName.toLowerCase().includes("kleber") && (
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSyncGoogleCalendar}
+            disabled={syncingCalendar}
+            variant="outline"
+            className="gap-2"
+          >
+            {syncingCalendar ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarCheck className="h-4 w-4" />}
+            {syncingCalendar ? "Sincronizando..." : "Sincronizar Google Agenda"}
+          </Button>
+        </div>
+      )}
+
       {/* Multipass Reminders */}
       {multipassReminders.filter(r => !(compradoStatus[r.contractId] ?? r.comprado)).length > 0 && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
