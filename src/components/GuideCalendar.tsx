@@ -180,6 +180,26 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
   const [eventFilter, setEventFilter] = useState<EventFilter>("current-month");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [contractToEdit, setContractToEdit] = useState<Contract | null>(null);
+  const [syncingCalendar, setSyncingCalendar] = useState(false);
+
+  const handleSyncGoogleCalendar = async () => {
+    setSyncingCalendar(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-google-calendar", {
+        body: { guideName },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(
+        `Google Agenda sincronizada: ${data.created} criados, ${data.updated} atualizados${data.errors ? `, ${data.errors} erros` : ""}`,
+      );
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao sincronizar: " + (e instanceof Error ? e.message : "desconhecido"));
+    } finally {
+      setSyncingCalendar(false);
+    }
+  };
 
   // Function to open edit dialog for a contract
   const handleOpenEditDialog = (contractId: string) => {
