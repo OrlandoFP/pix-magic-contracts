@@ -77,17 +77,23 @@ Deno.serve(async (req) => {
     const CONN = Deno.env.get("GOOGLE_CALENDAR_API_KEY");
     if (!LOVABLE || !CONN) throw new Error("Missing API credentials");
 
-    const { guideName } = await req.json().catch(() => ({ guideName: "" }));
-    if (!guideName || typeof guideName !== "string") {
-      return new Response(JSON.stringify({ error: "guideName required" }), {
+    const body = await req.json().catch(() => ({}));
+    const guideName: string = body?.guideName ?? "";
+    const contractId: string | undefined = body?.contractId;
+
+    if (!guideName && !contractId) {
+      return new Response(JSON.stringify({ error: "guideName or contractId required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const filter = contractId
+      ? `id=eq.${contractId}`
+      : `nome_guia=ilike.${encodeURIComponent(guideName)}`;
     const qres = await fetch(
-      `${SUPABASE_URL}/rest/v1/contracts?nome_guia=ilike.${encodeURIComponent(guideName)}&select=id,nome_completo,telefone,datas_requeridas,nome_guia,hospede_disney`,
+      `${SUPABASE_URL}/rest/v1/contracts?${filter}&select=id,nome_completo,telefone,datas_requeridas,nome_guia,hospede_disney`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
     );
     const contracts = (await qres.json()) as Contract[];
