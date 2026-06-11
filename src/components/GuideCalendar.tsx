@@ -302,6 +302,20 @@ export function GuideCalendar({ contracts, guideName }: GuideCalendarProps) {
 
   return (
     <div className="space-y-6">
+      {guideName.toLowerCase().includes("kleber") && (
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSyncGoogleCalendar}
+            disabled={syncingCalendar}
+            variant="outline"
+            className="gap-2"
+          >
+            {syncingCalendar ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarCheck className="h-4 w-4" />}
+            {syncingCalendar ? "Sincronizando..." : "Sincronizar Google Agenda"}
+          </Button>
+        </div>
+      )}
+
       {/* Multipass Reminders */}
       {multipassReminders.filter(r => !(compradoStatus[r.contractId] ?? r.comprado)).length > 0 && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
