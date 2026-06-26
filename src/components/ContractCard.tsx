@@ -27,6 +27,7 @@ interface Contract {
   valor: string;
   created_at: string;
   hospede_disney: boolean;
+  vendedor?: string | null;
   comprado?: boolean;
   pago?: boolean;
   nf_emitida?: boolean;
@@ -244,6 +245,11 @@ export function ContractCard({ contract, onEdit, onDelete }: ContractCardProps) 
           </div>
           <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 sm:gap-2 flex-wrap">
             <span className="truncate">{contract.nome_guia.toUpperCase()}</span>
+            {contract.vendedor && (
+              <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 py-0 h-4 sm:h-5">
+                Vend: {contract.vendedor}
+              </Badge>
+            )}
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />
               {contract.quantidade_pessoas || 1}p
