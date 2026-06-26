@@ -35,6 +35,7 @@ interface Contract {
   quantidade_pessoas: number | null;
   valor: string;
   hospede_disney: boolean;
+  vendedor?: string | null;
   created_at: string;
   umbler_chat_url?: string | null;
 }
@@ -110,6 +111,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       datasRequeridas: contract.datas_requeridas,
       quantidadePessoas: String(contract.quantidade_pessoas || 1),
       hospedeDisney: contract.hospede_disney,
+      vendedor: (contract.vendedor as any) || "Kleber",
     };
   }, [contract]);
 
@@ -137,6 +139,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
       datasRequeridas: "Datas a definir",
       quantidadePessoas: "1",
       hospedeDisney: false,
+      vendedor: "Kleber",
     },
   });
 
@@ -203,6 +206,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           email: data.email,
           telefone: data.telefone,
           nome_guia: data.nomeGuia,
+          vendedor: data.vendedor,
           valor: data.valor,
           datas_requeridas: datasRequeridas,
           quantidade_dias: quantidadeDias,
@@ -401,6 +405,26 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
               </Select>
               {errors.nomeGuia && (
                 <p className="text-sm text-destructive">{errors.nomeGuia.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-vendedor">Vendedor *</Label>
+              <Select
+                value={(watch("vendedor") as string) || "Kleber"}
+                onValueChange={(value) => setValue("vendedor", value as any, { shouldValidate: true })}
+              >
+                <SelectTrigger id="edit-vendedor">
+                  <SelectValue placeholder="Selecione o vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Kleber","Renata","Carolina","Marcella","Barbara","Pedro","Rafael"].map((v) => (
+                    <SelectItem key={v} value={v}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.vendedor && (
+                <p className="text-sm text-destructive">{errors.vendedor.message as string}</p>
               )}
             </div>
 

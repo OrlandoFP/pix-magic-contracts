@@ -413,6 +413,7 @@ export function ContractForm() {
         telefone: data.telefone,
         datas_requeridas: datasRequeridas,
         nome_guia: data.nomeGuia,
+        vendedor: data.vendedor,
         quantidade_dias: quantidadeDias,
         quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
         valor: data.valor,
@@ -841,6 +842,28 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
               </Select>
               {errors.nomeGuia && (
                 <p className="text-sm text-destructive">{errors.nomeGuia.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="vendedor">Vendedor *</Label>
+              <Select onValueChange={(value) => setValue("vendedor", value as any, { shouldValidate: true })} value={watch("vendedor") || undefined}>
+                <SelectTrigger id="vendedor">
+                  <SelectValue placeholder="Selecione o vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Kleber","Renata","Carolina","Marcella","Barbara","Pedro","Rafael"].map((v) => (
+                    <SelectItem key={v} value={v}>
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-4 w-4" />
+                        {v}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.vendedor && (
+                <p className="text-sm text-destructive">{errors.vendedor.message as string}</p>
               )}
             </div>
 

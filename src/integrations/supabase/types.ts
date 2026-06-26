@@ -84,6 +84,7 @@ export type Database = {
           telefone: string
           umbler_chat_url: string | null
           valor: string
+          vendedor: string | null
         }
         Insert: {
           acceptance_token?: string | null
@@ -112,6 +113,7 @@ export type Database = {
           telefone: string
           umbler_chat_url?: string | null
           valor: string
+          vendedor?: string | null
         }
         Update: {
           acceptance_token?: string | null
@@ -140,6 +142,7 @@ export type Database = {
           telefone?: string
           umbler_chat_url?: string | null
           valor?: string
+          vendedor?: string | null
         }
         Relationships: []
       }

@@ -12,6 +12,9 @@ export const contractFormSchema = z.object({
   quantidadePessoas: z.string().trim().regex(/^\d+$/, "Quantidade inválida").optional().default("1"),
   datasRequeridas: z.string().trim().optional(),
   hospedeDisney: z.boolean().default(false),
+  vendedor: z.enum(["Kleber", "Renata", "Carolina", "Marcella", "Barbara", "Pedro", "Rafael"], {
+    errorMap: () => ({ message: "Selecione um vendedor" }),
+  }),
 });
 
 export type ContractFormData = z.infer<typeof contractFormSchema>;
