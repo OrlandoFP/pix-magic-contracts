@@ -413,6 +413,7 @@ export function ContractForm() {
         telefone: data.telefone,
         datas_requeridas: datasRequeridas,
         nome_guia: data.nomeGuia,
+        vendedor: data.vendedor,
         quantidade_dias: quantidadeDias,
         quantidade_pessoas: parseInt(data.quantidadePessoas || "1"),
         valor: data.valor,
