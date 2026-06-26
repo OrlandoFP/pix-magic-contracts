@@ -845,6 +845,28 @@ Datas: 7/jan - Magic Kingdom, 8/jan - Animal Kingdom...`}
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="vendedor">Vendedor *</Label>
+              <Select onValueChange={(value) => setValue("vendedor", value as any, { shouldValidate: true })} value={watch("vendedor") || undefined}>
+                <SelectTrigger id="vendedor">
+                  <SelectValue placeholder="Selecione o vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {["Kleber","Renata","Carolina","Marcella","Barbara","Pedro","Rafael"].map((v) => (
+                    <SelectItem key={v} value={v}>
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-4 w-4" />
+                        {v}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.vendedor && (
+                <p className="text-sm text-destructive">{errors.vendedor.message as string}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="quantidadePessoas">Qtd. Pessoas *</Label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
