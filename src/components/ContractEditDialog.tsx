@@ -282,7 +282,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-background/80 p-4 backdrop-blur-sm [-webkit-overflow-scrolling:touch]"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -290,11 +290,12 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
         }
       }}
     >
+      <div className="flex min-h-full items-start justify-center sm:items-center">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-contract-title"
-        className="relative grid w-full max-w-2xl max-h-[90dvh] gap-4 overflow-y-auto overscroll-contain touch-pan-y rounded-lg border bg-background p-6 shadow-lg [-webkit-overflow-scrolling:touch]"
+        className="relative grid w-full max-w-2xl gap-4 rounded-lg border bg-background p-6 shadow-lg my-auto"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <Button
@@ -514,6 +515,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
             </Button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );
