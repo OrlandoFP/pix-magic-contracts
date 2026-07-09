@@ -6,7 +6,7 @@ export const contractFormSchema = z.object({
   endereco: z.string().trim().min(10, "Endereço deve ter pelo menos 10 caracteres").max(200, "Endereço deve ter no máximo 200 caracteres"),
   cep: z.string().trim().regex(/^\d{5}-?\d{3}$/, "CEP inválido"),
   email: z.string().trim().email("E-mail inválido").max(255, "E-mail deve ter no máximo 255 caracteres"),
-  telefone: z.string().trim().regex(/^\(?[1-9]{2}\)?\s?(?:9\d{4}|[2-9]\d{3})-?\d{4}$/, "Telefone inválido"),
+  telefone: z.string().trim().min(8, "Telefone inválido").max(20, "Telefone inválido"),
   nomeGuia: z.string().trim().min(2, "Nome do guia deve ter pelo menos 2 caracteres").max(100, "Nome do guia deve ter no máximo 100 caracteres"),
   valor: z.string().trim().regex(/^\d+([.,]\d{1,2})?$/, "Valor inválido"),
   quantidadePessoas: z.string().trim().regex(/^\d+$/, "Quantidade inválida").optional().default("1"),
