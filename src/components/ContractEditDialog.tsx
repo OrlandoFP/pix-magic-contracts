@@ -315,7 +315,14 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           </h2>
         </div>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 touch-pan-y">
+        <form onSubmit={handleSubmit(onSubmit, (errs) => {
+          const firstMsg = Object.values(errs)[0]?.message as string | undefined;
+          toast({
+            title: "Verifique os campos",
+            description: firstMsg || "Existem campos inválidos no formulário.",
+            variant: "destructive",
+          });
+        })} className="space-y-6 touch-pan-y">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="edit-nomeCompleto">Nome Completo</Label>
