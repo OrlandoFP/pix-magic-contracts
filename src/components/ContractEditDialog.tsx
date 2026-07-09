@@ -516,6 +516,7 @@ export function ContractEditDialog({ contract, open, onOpenChange, onSuccess }: 
           </div>
         </form>
       </div>
+      </div>
     </div>
   );
 }
