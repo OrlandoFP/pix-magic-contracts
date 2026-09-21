@@ -333,6 +333,8 @@ export function ContractForm() {
         if (parsed.cep) setValue("cep", formatCEP(parsed.cep));
         if (parsed.endereco) setValue("endereco", parsed.endereco);
         if (parsed.quantidadePessoas) setValue("quantidadePessoas", String(parsed.quantidadePessoas));
+        if (parsed.nomeGuia) setValue("nomeGuia", parsed.nomeGuia);
+        if (typeof parsed.hospedeDisney === "boolean") setValue("hospedeDisney", parsed.hospedeDisney);
         
         // Parse park dates from AI response
         if (parsed.parkDates && Array.isArray(parsed.parkDates)) {
