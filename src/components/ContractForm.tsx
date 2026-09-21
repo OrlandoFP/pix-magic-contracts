@@ -312,16 +312,39 @@ export function ContractForm() {
     setIsParsing(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("parse-contract-data", {
-        body: { rawText: rawData },
-      });
+      const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-contract-data`;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-      if (error) {
-        throw error;
+      const callParser = async () =>
+        fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify({ rawText: rawData }),
+        });
+
+      let response: Response;
+      try {
+        response = await callParser();
+      } catch {
+        // Uma segunda tentativa para falhas momentâneas de rede
+        response = await callParser();
       }
 
-      if (data?.error) {
-        throw new Error(data.error);
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || data?.error) {
+        throw new Error(
+          data?.error ||
+            (response.status === 429
+              ? "Muitas tentativas seguidas. Aguarde alguns segundos e tente de novo."
+              : response.status === 402
+              ? "Créditos de IA esgotados. Recarregue para continuar usando a leitura automática."
+              : `Falha na leitura automática (${response.status}).`)
+        );
       }
 
       const parsed = data?.data;
